@@ -106,7 +106,8 @@ export function DataTable<TData, TValue>({
     setPagination((prev) => {
       if (prev.pageSize === newPageSize) return prev; // Already correct size
       
-      const totalRows = table.getFilteredRowModel().rows.length;
+      // Use data length as proxy for filtered rows (table instance is unstable)
+      const totalRows = data.length;
       const newTotalPages = Math.ceil(totalRows / newPageSize);
       
       // Adjust page index if current page would be out of bounds
@@ -117,7 +118,7 @@ export function DataTable<TData, TValue>({
         pageSize: newPageSize,
       };
     });
-  }, [view, table]);
+  }, [view, data.length]);
 
   // Scroll to top when page changes
   React.useEffect(() => {
