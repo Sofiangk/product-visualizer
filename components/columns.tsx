@@ -3,19 +3,11 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Product } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, MoreHorizontal, Pencil } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ProductDialog } from "./product-dialog";
-import { useState } from "react";
+import { ArrowUpDown } from "lucide-react";
 import { CategoryEditableCell } from "./category-editable-cell";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ImagePreview } from "./image-preview";
+import { ProductActionsCell } from "./product-actions-cell";
 
 export const columns: ColumnDef<Product>[] = [
   {
@@ -137,30 +129,6 @@ export const columns: ColumnDef<Product>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const product = row.original;
-      const [open, setOpen] = useState(false);
-
-      return (
-        <>
-          <ProductDialog product={product} open={open} onOpenChange={setOpen} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => setOpen(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit Product
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </>
-      );
-    },
+    cell: ({ row }) => <ProductActionsCell product={row.original} />,
   },
 ];
