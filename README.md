@@ -1,36 +1,158 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Saidalia Product Manager
+
+A modern, responsive product catalog management system built with Next.js 16, featuring bilingual support (English/Arabic) and intuitive data visualization.
+
+## Features
+
+- 📱 **Mobile-First Design** - Fully responsive with optimized mobile experience
+- 🔍 **Advanced Filtering** - Search, filter by category, and image availability
+- 📊 **Multiple Views** - Switch between table and grid layouts
+- ✏️ **Inline Editing** - Quick category updates with dropdown selection
+- 📝 **Full Product Editor** - Comprehensive product editing dialog
+- 🌐 **Bilingual Support** - English and Arabic descriptions with RTL support
+- 📤 **Import/Export** - CSV import/export with Magento format support
+- 🏷️ **Smart Categorization** - 8 main categories with validated subcategories
+- 🎨 **Modern UI** - Built with Radix UI and Tailwind CSS
+
+## Product Categories
+
+- Mom & Baby
+- Vitamins & Supplements
+- Treatments
+- Skin Care
+- Hair Care
+- Makeup & Lenses
+- Personal Care
+- Home Health Care
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS 4
+- **UI Components:** Radix UI
+- **Tables:** TanStack Table
+- **Forms:** React Hook Form + Zod
+- **CSV Parsing:** PapaParse
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+ 
+- npm or yarn
+
+### Installation
 
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+product-visualizer/
+├── app/                    # Next.js app directory
+│   ├── actions.ts         # Server actions for data persistence
+│   ├── page.tsx           # Main page component
+│   └── layout.tsx         # Root layout with metadata
+├── components/            # React components
+│   ├── ui/               # Reusable UI components (Radix)
+│   ├── data-table.tsx    # Main data table with views
+│   ├── columns.tsx       # Table column definitions
+│   ├── product-card.tsx  # Grid view card component
+│   ├── product-dialog.tsx # Product editor dialog
+│   └── ...               # Other components
+├── lib/                   # Utility libraries
+│   ├── schema.ts         # Zod validation schemas
+│   ├── categories.ts     # Category mappings
+│   ├── csv.ts           # CSV parsing utilities
+│   └── magento-mapper.ts # Magento format conversion
+└── public/               # Static assets
 
-## Learn More
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Mobile Enhancements
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The app is fully optimized for mobile devices:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Responsive padding and font sizes
+- Flexible toolbar layout with proper wrapping
+- Single-column forms on small screens
+- Simplified pagination display
+- Touch-friendly buttons and controls
+- Proper viewport configuration
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Deploy to Vercel (Recommended)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Sofiangk/product-visualizer)
+
+Or using Vercel CLI:
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+The app will be automatically configured for optimal Next.js deployment.
+
+## Environment Variables
+
+No environment variables are required for basic operation. The app reads from a static CSV file in the `public` directory.
+
+## Data Management
+
+### Import CSV
+1. Click "Import" button
+2. Select a CSV file with product data
+3. Data will be loaded into the table
+
+### Export CSV
+1. Click "Export" button
+2. Choose between:
+   - Standard format (all products)
+   - Magento format (selected products only)
+3. File will be downloaded
+
+### CSV Format
+
+The app expects CSV files with these columns:
+- ID
+- Website
+- Product
+- Price
+- Barcode
+- Expiry Date
+- Quantity
+- Main Category (EN)
+- Sub-Category (EN)
+- Image
+- Short Description En
+- Long Description En
+- Short Description Ar
+- Long Description Ar
+
+## License
+
+Proprietary - Saidalia
+
+## Support
+
+For support, please contact the development team.
