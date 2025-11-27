@@ -88,7 +88,7 @@ export function ProductDialog({ product, trigger, open, onOpenChange }: ProductD
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-5xl max-h-[90vh] w-[95vw] sm:w-full flex flex-col gap-0 p-0">
+      <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] sm:w-[90vw] flex flex-col gap-0 p-0">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="text-2xl">Edit Product</DialogTitle>
           <DialogDescription>
@@ -96,9 +96,9 @@ export function ProductDialog({ product, trigger, open, onOpenChange }: ProductD
           </DialogDescription>
         </DialogHeader>
         <Separator />
-        <ScrollArea className="flex-1 px-6">
+        <ScrollArea className="flex-1 px-6 max-h-[calc(90vh-200px)]">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6 pr-4">
               <Tabs defaultValue="basic" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="basic" className="gap-2">
@@ -281,7 +281,7 @@ export function ProductDialog({ product, trigger, open, onOpenChange }: ProductD
                               <Textarea
                                 {...field}
                                 placeholder="Brief product description (1-2 sentences)"
-                                className="resize-none"
+                                className="resize-y min-h-[80px]"
                                 rows={3}
                               />
                             </FormControl>
@@ -302,8 +302,8 @@ export function ProductDialog({ product, trigger, open, onOpenChange }: ProductD
                               <Textarea
                                 {...field}
                                 placeholder="Detailed product description, features, benefits, usage instructions..."
-                                className="resize-none"
-                                rows={6}
+                                className="resize-y min-h-[150px]"
+                                rows={8}
                               />
                             </FormControl>
                             <FormDescription>
@@ -332,7 +332,7 @@ export function ProductDialog({ product, trigger, open, onOpenChange }: ProductD
                               <Textarea
                                 {...field}
                                 placeholder="وصف مختصر للمنتج"
-                                className="resize-none text-right"
+                                className="resize-y min-h-[80px] text-right"
                                 dir="rtl"
                                 rows={3}
                               />
@@ -354,9 +354,9 @@ export function ProductDialog({ product, trigger, open, onOpenChange }: ProductD
                               <Textarea
                                 {...field}
                                 placeholder="وصف تفصيلي للمنتج، المميزات، الفوائد، طريقة الاستخدام..."
-                                className="resize-none text-right"
+                                className="resize-y min-h-[150px] text-right"
                                 dir="rtl"
-                                rows={6}
+                                rows={8}
                               />
                             </FormControl>
                             <FormDescription className="text-right" dir="rtl">

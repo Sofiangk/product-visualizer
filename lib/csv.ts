@@ -11,6 +11,14 @@ export async function readProducts(): Promise<Product[]> {
     Papa.parse(fileContent, {
       header: true,
       skipEmptyLines: true,
+      dynamicTyping: false, // Keep all values as strings to preserve barcodes
+      transform: (value: string, field: string) => {
+        // Ensure numeric fields that should remain as strings are preserved
+        if (field === 'Barcode' || field === 'ID' || field === 'Price' || field === 'Quantity') {
+          return value.trim();
+        }
+        return value;
+      },
       complete: (results) => {
         resolve(results.data as Product[]);
       },
@@ -22,6 +30,10 @@ export async function readProducts(): Promise<Product[]> {
 }
 
 export async function writeProducts(products: Product[]): Promise<void> {
-  const csv = Papa.unparse(products);
+  const csv = Papa.unparse(products, {
+    quotes: true, // Quote all fields to preserve formatting
+    quoteChar: '"',
+    escapeChar: '"',
+  });
   fs.writeFileSync(CSV_PATH, csv, "utf-8");
 }

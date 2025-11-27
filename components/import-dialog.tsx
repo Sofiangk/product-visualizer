@@ -43,6 +43,8 @@ export function ImportDialog({ onImport }: ImportDialogProps) {
     Papa.parse(selectedFile, {
       header: true,
       skipEmptyLines: true,
+      dynamicTyping: false, // Keep all values as strings to preserve barcodes
+      transform: (value: string) => value.trim(),
       complete: (results) => {
         const data = results.data as Product[];
         setPreview(data.slice(0, 5)); // Show first 5 rows
@@ -59,6 +61,8 @@ export function ImportDialog({ onImport }: ImportDialogProps) {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
+      dynamicTyping: false, // Keep all values as strings to preserve barcodes
+      transform: (value: string) => value.trim(),
       complete: (results) => {
         const data = results.data as Product[];
         onImport(data);
