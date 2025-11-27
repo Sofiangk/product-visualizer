@@ -14,6 +14,7 @@ export const productSchema = z.object({
   }),
   "Sub-Category (EN)": z.string(),
   Image: z.string().url().optional().or(z.literal("")),
+  "Additional Images": z.string().optional(), // Pipe-separated URLs for Magento compatibility
   "Short Description En": z.string().optional(),
   "Long Description En": z.string().optional(),
   "Short Description Ar": z.string().optional(),

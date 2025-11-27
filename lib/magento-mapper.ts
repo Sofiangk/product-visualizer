@@ -76,7 +76,7 @@ export function mapToMagento(products: Product[]): MagentoProduct[] {
       thumbnail_image: imageUrl,
       display_product_options_in: "Block after Info Column",
       qty: product.Quantity || "1",
-      additional_images: "", // Can be pipe-separated URLs if needed
+      additional_images: product["Additional Images"] || "",
       additional_attributes: "requires_prescription=No",
     };
   });

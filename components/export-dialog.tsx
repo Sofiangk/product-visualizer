@@ -34,6 +34,7 @@ const ALL_COLUMNS = [
   "Main Category (EN)",
   "Sub-Category (EN)",
   "Image",
+  "Additional Images",
   "Short Description En",
   "Long Description En",
   "Short Description Ar",
