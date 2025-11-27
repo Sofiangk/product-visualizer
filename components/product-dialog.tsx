@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Product, productSchema } from "@/lib/schema";
 import { CATEGORY_MAPPING, MAIN_CATEGORIES } from "@/lib/categories";
-import { updateProduct } from "@/app/actions";
+import { useProducts } from "@/lib/products-context";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,6 +44,7 @@ interface ProductDialogProps {
 }
 
 export function ProductDialog({ product, trigger, open, onOpenChange }: ProductDialogProps) {
+  const { updateProduct } = useProducts();
   const [isPending, setIsPending] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   
@@ -62,15 +63,15 @@ export function ProductDialog({ product, trigger, open, onOpenChange }: ProductD
 
   const mainCategory = form.watch("Main Category (EN)");
 
-  async function onSubmit(data: Product) {
+  function onSubmit(data: Product) {
     setIsPending(true);
     try {
-      const result = await updateProduct(data);
-      if (result.success) {
+      const validation = productSchema.safeParse(data);
+      if (validation.success) {
+        updateProduct(data);
         setIsOpen(false);
       } else {
-        console.error(result.error);
-        // Ideally show a toast here
+        console.error(validation.error);
       }
     } catch (error) {
       console.error(error);

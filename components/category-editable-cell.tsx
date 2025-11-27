@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Product } from "@/lib/schema";
 import { CATEGORY_MAPPING, MAIN_CATEGORIES } from "@/lib/categories";
-import { updateProduct } from "@/app/actions";
+import { useProducts } from "@/lib/products-context";
 import {
   Select,
   SelectContent,
@@ -18,17 +18,18 @@ interface CategoryEditableCellProps {
 }
 
 export function CategoryEditableCell({ product, type }: CategoryEditableCellProps) {
+  const { updateProduct } = useProducts();
   const [isPending, setIsPending] = useState(false);
   const [currentValue, setCurrentValue] = useState(
     type === "main" ? product["Main Category (EN)"] : product["Sub-Category (EN)"]
   );
 
-  // Sync with product prop when it changes (after revalidation)
+  // Sync with product prop when it changes
   useEffect(() => {
     setCurrentValue(type === "main" ? product["Main Category (EN)"] : product["Sub-Category (EN)"]);
   }, [product, type]);
 
-  const handleValueChange = async (value: string) => {
+  const handleValueChange = (value: string) => {
     setIsPending(true);
     
     // Optimistic update
@@ -45,21 +46,9 @@ export function CategoryEditableCell({ product, type }: CategoryEditableCellProp
       updatedProduct["Sub-Category (EN)"] = value;
     }
 
-    try {
-      const result = await updateProduct(updatedProduct);
-      if (!result.success) {
-        console.error(result.error);
-        // Revert on error
-        setCurrentValue(type === "main" ? product["Main Category (EN)"] : product["Sub-Category (EN)"]);
-      }
-      // Success - the optimistic update is already shown, no need to reload
-    } catch (error) {
-      console.error(error);
-      // Revert on error
-      setCurrentValue(type === "main" ? product["Main Category (EN)"] : product["Sub-Category (EN)"]);
-    } finally {
-      setIsPending(false);
-    }
+    // Update in context (persists to localStorage)
+    updateProduct(updatedProduct);
+    setIsPending(false);
   };
 
   if (type === "main") {

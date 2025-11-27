@@ -1,29 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { DataTable } from "@/components/data-table";
 import { columns } from "@/components/columns";
-import { Product } from "@/lib/schema";
-import { getProducts } from "./actions";
+import { useProducts } from "@/lib/products-context";
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadProducts() {
-      const { data } = await getProducts();
-      if (data) {
-        setProducts(data);
-      }
-      setLoading(false);
-    }
-    loadProducts();
-  }, []);
-
-  const handleImport = (importedProducts: Product[]) => {
-    setProducts(importedProducts);
-  };
+  const { products, setProducts, resetProducts, loading } = useProducts();
 
   if (loading) {
     return (
@@ -41,7 +23,7 @@ export default function Home() {
         <h1 className="text-xl sm:text-2xl font-bold">Product Management</h1>
       </div>
       <div className="flex-1 overflow-hidden">
-        <DataTable columns={columns} data={products} onDataChange={handleImport} />
+        <DataTable columns={columns} data={products} onDataChange={setProducts} onReset={resetProducts} />
       </div>
     </main>
   );

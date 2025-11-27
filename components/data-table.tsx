@@ -42,12 +42,14 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onDataChange?: (data: TData[]) => void;
+  onReset?: () => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   onDataChange,
+  onReset,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -111,6 +113,7 @@ export function DataTable<TData, TValue>({
           <DataTableToolbar 
             table={table} 
             onImport={onDataChange ? (products) => onDataChange(products as TData[]) : undefined}
+            onReset={onReset}
           />
         </div>
         <div className="flex items-center gap-2 order-1 sm:order-2 justify-end">

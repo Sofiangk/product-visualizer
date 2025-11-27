@@ -1,7 +1,7 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { X } from "lucide-react";
+import { X, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,17 +15,25 @@ import { Product } from "@/lib/schema";
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   onImport?: (products: Product[]) => void;
+  onReset?: () => void;
 }
 
 export function DataTableToolbar<TData>({
   table,
   onImport,
+  onReset,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
   
   // Extract data for export
   const products = table.getCoreRowModel().rows.map((row) => row.original as Product);
   const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original as Product);
+
+  const handleReset = () => {
+    if (onReset && confirm("Reset all products to default data? This will clear all your changes.")) {
+      onReset();
+    }
+  };
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 flex-1">
@@ -72,6 +80,17 @@ export function DataTableToolbar<TData>({
         <ScrapeDialog products={products} />
         {onImport && <ImportDialog onImport={onImport} />}
         <ExportDialog products={products} selectedRows={selectedRows} />
+        {onReset && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReset}
+            className="h-8"
+            title="Reset to default data"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
