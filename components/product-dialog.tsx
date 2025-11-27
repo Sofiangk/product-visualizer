@@ -23,6 +23,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,9 +33,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea"; // Need to add textarea
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, Image as ImageIcon, Package, FileText } from "lucide-react";
 
 interface ProductDialogProps {
   product: Product;
@@ -80,196 +83,382 @@ export function ProductDialog({ product, trigger, open, onOpenChange }: ProductD
     }
   }
 
+  const imageUrl = form.watch("Image");
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Edit Product</DialogTitle>
+      <DialogContent className="max-w-5xl max-h-[90vh] w-[95vw] sm:w-full flex flex-col gap-0 p-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
+          <DialogTitle className="text-2xl">Edit Product</DialogTitle>
           <DialogDescription>
-            Make changes to the product here. Click save when you're done.
+            Update product information, descriptions, and images.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-1 pr-4">
+        <Separator />
+        <ScrollArea className="flex-1 px-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="Product"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="Price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
+              <Tabs defaultValue="basic" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="basic" className="gap-2">
+                    <Package className="h-4 w-4" />
+                    <span className="hidden sm:inline">Basic Info</span>
+                    <span className="sm:hidden">Info</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="descriptions" className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span className="hidden sm:inline">Descriptions</span>
+                    <span className="sm:hidden">Desc</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="media" className="gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    <span className="hidden sm:inline">Image</span>
+                    <span className="sm:hidden">Image</span>
+                  </TabsTrigger>
+                </TabsList>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="Main Category (EN)"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Main Category</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          form.setValue("Sub-Category (EN)", ""); // Reset sub-category
-                        }}
-                        defaultValue={field.value}
-                      >
+                <TabsContent value="basic" className="space-y-6 mt-6">
+                  {/* Product Name & Price */}
+                  <FormField
+                    control={form.control}
+                    name="Product"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Product Name *</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
+                          <Input {...field} placeholder="Enter product name" className="text-lg" />
                         </FormControl>
-                        <SelectContent>
-                          {MAIN_CATEGORIES.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="Sub-Category (EN)"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sub-Category</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={!mainCategory}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a sub-category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(CATEGORY_MAPPING[mainCategory] || []).map((subCategory) => (
-                            <SelectItem key={subCategory} value={subCategory}>
-                              {subCategory}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                 <FormField
-                  control={form.control}
-                  name="Short Description En"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Short Description (EN)</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="Short Description Ar"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Short Description (AR)</FormLabel>
-                      <FormControl>
-                        <Input {...field} className="text-right" dir="rtl" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                 <FormField
-                  control={form.control}
-                  name="Long Description En"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Long Description (EN)</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="Long Description Ar"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Long Description (AR)</FormLabel>
-                      <FormControl>
-                        <Input {...field} className="text-right" dir="rtl" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="Image"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Image URL</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {form.watch("Image") && (
-                <div className="mt-2">
-                  <img
-                    src={form.watch("Image")}
-                    alt="Preview"
-                    className="h-32 w-32 object-contain border rounded"
+                        <FormDescription>The display name of your product</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="Price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Price *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="99.99" type="text" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="Barcode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Barcode</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="123456789" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="Quantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quantity</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="100" type="text" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="Expiry Date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Expiry Date</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="MM/DD/YYYY" />
+                        </FormControl>
+                        <FormDescription>Optional expiration date for the product</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Separator />
+
+                  {/* Categories */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-4">Categories</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="Main Category (EN)"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Main Category *</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                const firstSubCat = CATEGORY_MAPPING[value]?.[0];
+                                if (firstSubCat) {
+                                  form.setValue("Sub-Category (EN)", firstSubCat);
+                                }
+                              }}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select main category" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {MAIN_CATEGORIES.map((category) => (
+                                  <SelectItem key={category} value={category}>
+                                    {category}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="Sub-Category (EN)"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Sub-Category *</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={!mainCategory}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select sub-category" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {(CATEGORY_MAPPING[mainCategory] || []).map((subCategory) => (
+                                  <SelectItem key={subCategory} value={subCategory}>
+                                    {subCategory}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              {!mainCategory && "Select main category first"}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="descriptions" className="space-y-6 mt-6">
+                  {/* English Descriptions */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-4">English Descriptions</h3>
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="Short Description En"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Short Description</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="Brief product description (1-2 sentences)"
+                                className="resize-none"
+                                rows={3}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {field.value?.length || 0} characters
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="Long Description En"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Long Description</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="Detailed product description, features, benefits, usage instructions..."
+                                className="resize-none"
+                                rows={6}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {field.value?.length || 0} characters
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Arabic Descriptions */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-4">Arabic Descriptions (وصف عربي)</h3>
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="Short Description Ar"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>وصف قصير (Short Description)</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="وصف مختصر للمنتج"
+                                className="resize-none text-right"
+                                dir="rtl"
+                                rows={3}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-right" dir="rtl">
+                              {field.value?.length || 0} حرف
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="Long Description Ar"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>وصف مفصل (Long Description)</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="وصف تفصيلي للمنتج، المميزات، الفوائد، طريقة الاستخدام..."
+                                className="resize-none text-right"
+                                dir="rtl"
+                                rows={6}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-right" dir="rtl">
+                              {field.value?.length || 0} حرف
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="media" className="space-y-6 mt-6">
+                  <FormField
+                    control={form.control}
+                    name="Image"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Image URL</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="https://example.com/image.jpg" 
+                            type="url"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Enter a direct URL to the product image
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Image Preview */}
+                  {imageUrl && (
+                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-8">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="text-sm font-medium text-muted-foreground">Preview</div>
+                        <div className="relative w-full max-w-md aspect-square bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                          <img
+                            src={imageUrl}
+                            alt="Product preview"
+                            className="max-w-full max-h-full object-contain"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                          <div className="hidden absolute inset-0 flex items-center justify-center text-muted-foreground">
+                            <div className="text-center">
+                              <ImageIcon className="mx-auto h-12 w-12 mb-2" />
+                              <p className="text-sm">Failed to load image</p>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground text-center max-w-md truncate">
+                          {imageUrl}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!imageUrl && (
+                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-12">
+                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <ImageIcon className="h-12 w-12" />
+                        <p className="text-sm">No image URL provided</p>
+                        <p className="text-xs">Enter an image URL above to see preview</p>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </form>
           </Form>
         </ScrollArea>
-        <DialogFooter className="pt-4">
-          <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save changes
+        <Separator />
+        <DialogFooter className="px-6 py-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => setIsOpen(false)}
+            disabled={isPending}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            onClick={form.handleSubmit(onSubmit)} 
+            disabled={isPending}
+            className="min-w-[120px]"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
