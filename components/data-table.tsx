@@ -6,6 +6,7 @@ import {
   ColumnFiltersState,
   SortingState,
   VisibilityState,
+  PaginationState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -61,7 +62,12 @@ export function DataTable<TData, TValue>({
     });
   const [rowSelection, setRowSelection] = React.useState({});
   const [view, setView] = React.useState<"table" | "grid">("table");
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
   const scrollAreaRef = React.useRef<HTMLDivElement>(null);
+  const prevViewRef = React.useRef<"table" | "grid">(view);
 
   const table = useReactTable({
     data,
@@ -74,22 +80,43 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
     },
     initialState: {
         pagination: {
             pageSize: 10,
         }
-    }
+    },
+    // Prevent automatic page reset when data changes
+    autoResetPageIndex: false,
   });
 
-  // Update page size when view changes
+  // Update page size when view changes (preserve page index if possible)
   React.useEffect(() => {
-    table.setPageSize(view === "grid" ? 20 : 10);
+    if (prevViewRef.current === view) return; // View hasn't changed
+    prevViewRef.current = view;
+    
+    const newPageSize = view === "grid" ? 20 : 10;
+    setPagination((prev) => {
+      if (prev.pageSize === newPageSize) return prev; // Already correct size
+      
+      const totalRows = table.getFilteredRowModel().rows.length;
+      const newTotalPages = Math.ceil(totalRows / newPageSize);
+      
+      // Adjust page index if current page would be out of bounds
+      const adjustedPageIndex = Math.min(prev.pageIndex, Math.max(0, newTotalPages - 1));
+      
+      return {
+        pageIndex: adjustedPageIndex,
+        pageSize: newPageSize,
+      };
+    });
   }, [view, table]);
 
   // Scroll to top when page changes
