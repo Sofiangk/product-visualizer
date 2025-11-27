@@ -103,7 +103,30 @@ export const columns: ColumnDef<Product>[] = [
   },
   {
     accessorKey: "Price",
-    header: "Price",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Price
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const price = row.getValue("Price") as string;
+      if (!price || price.trim() === "" || price === "nan" || price === "NaN" || price === "None") {
+        return <span className="text-muted-foreground">1.0</span>;
+      }
+      // Parse and format price consistently with one decimal place
+      const numPrice = parseFloat(price);
+      if (isNaN(numPrice)) {
+        return <span className="text-muted-foreground">1.0</span>;
+      }
+      // Format to always show one decimal place (e.g., 85 -> 85.0, 150 -> 150.0, 1 -> 1.0)
+      return <span>{numPrice.toFixed(1)}</span>;
+    },
   },
   {
     accessorKey: "Main Category (EN)",

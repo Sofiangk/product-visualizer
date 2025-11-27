@@ -73,7 +73,23 @@ export function ProductDialog({
 
   // Update form values when product prop changes
   useEffect(() => {
-    form.reset(product);
+    // Clean up "nan" values from Additional Images before resetting form
+    const cleanedProduct = {
+      ...product,
+      'Additional Images': product['Additional Images']
+        ? product['Additional Images']
+            .split('|')
+            .filter(
+              (img) =>
+                img.toLowerCase() !== 'nan' &&
+                img.trim() !== '' &&
+                img !== 'NaN' &&
+                img !== 'None'
+            )
+            .join('|')
+        : '',
+    };
+    form.reset(cleanedProduct);
   }, [product, form]);
 
   const mainCategory = form.watch('Main Category (EN)');
@@ -497,7 +513,16 @@ export function ProductDialog({
                         name="Additional Images"
                         render={({ field }) => {
                           const images = field.value
-                            ? field.value.split('|').filter(Boolean)
+                            ? field.value
+                                .split('|')
+                                .filter(Boolean)
+                                .filter(
+                                  (img) =>
+                                    img.toLowerCase() !== 'nan' &&
+                                    img.trim() !== '' &&
+                                    img !== 'NaN' &&
+                                    img !== 'None'
+                                )
                             : [];
 
                           const addImage = (url: string) => {

@@ -12,10 +12,12 @@ A modern, responsive product catalog management system built with Next.js 16, fe
 - ✏️ **Inline Editing** - Quick category updates with dropdown selection
 - 📝 **Full Product Editor** - Comprehensive product editing dialog with tabbed interface
 - 🌐 **Bilingual Support** - English and Arabic descriptions with RTL support
-- 📤 **Import/Export** - CSV import/export with Magento format support
+- 📤 **Import/Export** - CSV import/export with advanced filtering and Magento format support
 - 🏷️ **Smart Categorization** - 8 main categories with validated subcategories
 - 💾 **Data Persistence** - Client-side localStorage persistence for product edits
 - 🎨 **Modern UI** - Built with Radix UI and Tailwind CSS
+- 🔢 **Smart Defaults** - Price and Quantity default to 1.0 if missing or zero
+- 📊 **Consistent Formatting** - All prices display with one decimal place (e.g., 85.0, 150.0)
 
 ## Product Categories
 
@@ -129,10 +131,18 @@ No environment variables are required for basic operation. The app reads from a 
 
 ### Export CSV
 1. Click "Export" button
-2. Choose between:
-   - Standard format (all products)
-   - Magento format (selected products only)
-3. File will be downloaded
+2. Choose export scope:
+   - All Products
+   - Selected Rows (use checkboxes in table to select)
+3. Choose format:
+   - Standard format (custom column selection)
+   - Magento format (all required fields)
+4. Apply filters (optional):
+   - Image filters: All / With images / Missing images
+   - Description filters: All / With descriptions / Missing descriptions
+   - Category filters: Select specific main/sub categories
+   - Row limit: Limit number of exported rows
+5. File will be downloaded
 
 ### CSV Format
 
@@ -160,6 +170,37 @@ Product cards in grid view feature:
 - **Navigation Controls**: Hover to reveal previous/next arrows and image indicators
 - **Category Breadcrumbs**: Shows category hierarchy as "Main Category > Sub-Category"
 - **Quick Edit**: Click "Edit" button to open full product editor
+
+## Export Filters
+
+The export dialog includes powerful filtering options:
+
+### Image Filters
+- **All products** - Export all products regardless of image status
+- **Only products with images** - Export products that have at least one image
+- **Only products with no images** - Export products missing images (useful for identifying what needs images)
+
+### Description Filters
+- **All products** - Export all products regardless of description status
+- **Only products with descriptions** - Export products that have at least one description field filled
+- **Only products with no descriptions** - Export products missing descriptions (useful for identifying what needs descriptions)
+
+### Category Filters
+- Multi-select main categories
+- Multi-select sub-categories (filtered by selected main categories)
+- "All" checkboxes to disable category filtering
+
+### Row Limit
+- Option to limit the number of rows exported
+- Useful for testing or exporting specific batches
+
+All filters work together and can be combined. The preview count shows exactly how many rows will be exported.
+
+## Data Defaults
+
+- **Price**: Automatically defaults to `1.0` if missing, empty, zero, or "nan"
+- **Quantity**: Automatically defaults to `1.0` if missing, empty, zero, or "nan"
+- **Price Formatting**: All prices display with one decimal place for consistency (e.g., `85.0`, `150.0`, `1.0`)
 
 ## License
 

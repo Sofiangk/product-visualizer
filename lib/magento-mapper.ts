@@ -65,7 +65,7 @@ export function mapToMagento(products: Product[]): MagentoProduct[] {
       product_online: "1",
       tax_class_name: "",
       visibility: "Catalog, Search",
-      price: product.Price || "0",
+      price: product.Price || "1",
       url_key: urlKey,
       meta_title: product.Product,
       meta_keywords: "",

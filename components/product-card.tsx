@@ -18,11 +18,21 @@ export function ProductCard({ product }: ProductCardProps) {
 
   // Get all images: main image + additional images
   const allImages: string[] = [];
-  if (product.Image) {
-    allImages.push(product.Image);
+  if (product.Image && product.Image.trim() && product.Image.toLowerCase() !== 'nan') {
+    allImages.push(product.Image.trim());
   }
   if (product["Additional Images"]) {
-    const additional = product["Additional Images"].split('|').filter(Boolean);
+    const additional = product["Additional Images"]
+      .split('|')
+      .map(img => img.trim())
+      .filter(Boolean)
+      .filter(img => {
+        const lower = img.toLowerCase();
+        return lower !== 'nan' && 
+               lower !== 'none' && 
+               img !== '' && 
+               (img.startsWith('http://') || img.startsWith('https://')); // Only valid URLs
+      });
     allImages.push(...additional);
   }
 
@@ -73,6 +83,11 @@ export function ProductCard({ product }: ProductCardProps) {
                   } else {
                     img.className = "object-contain w-full h-auto transition-opacity duration-300";
                   }
+                }}
+                onError={(e) => {
+                  // Hide broken images
+                  const img = e.currentTarget;
+                  img.style.display = 'none';
                 }}
               />
               
@@ -133,7 +148,18 @@ export function ProductCard({ product }: ProductCardProps) {
               {product.Product}
             </h3>
             <Badge variant="secondary" className="shrink-0">
-              {product.Price}
+              {(() => {
+                const price = product.Price || "1";
+                if (!price || price.trim() === "" || price === "nan" || price === "NaN" || price === "None") {
+                  return "1.0";
+                }
+                const numPrice = parseFloat(price);
+                if (isNaN(numPrice)) {
+                  return "1.0";
+                }
+                // Format to always show one decimal place
+                return numPrice.toFixed(1);
+              })()}
             </Badge>
           </div>
           {/* Breadcrumb: cat > sub-cat */}

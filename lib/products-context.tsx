@@ -6,6 +6,25 @@ import { getProducts } from "@/app/actions";
 
 const STORAGE_KEY = "saidalia_products";
 
+// Normalize product to ensure Price and Quantity defaults
+function normalizeProduct(product: Product): Product {
+  const normalized = { ...product };
+  
+  // Set Price to "1" if missing or "0"
+  if (!normalized.Price || normalized.Price === '0' || normalized.Price.trim() === '' || 
+      normalized.Price.toLowerCase() === 'nan' || normalized.Price === 'NaN' || normalized.Price === 'None') {
+    normalized.Price = '1';
+  }
+  
+  // Set Quantity to "1" if missing or "0"
+  if (!normalized.Quantity || normalized.Quantity === '0' || normalized.Quantity.trim() === '' || 
+      normalized.Quantity.toLowerCase() === 'nan' || normalized.Quantity === 'NaN' || normalized.Quantity === 'None') {
+    normalized.Quantity = '1';
+  }
+  
+  return normalized;
+}
+
 interface ProductsContextType {
   products: Product[];
   setProducts: (products: Product[]) => void;
@@ -27,8 +46,10 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         try {
-          const parsedProducts = JSON.parse(stored);
-          setProductsState(parsedProducts);
+          const parsedProducts = JSON.parse(stored) as Product[];
+          // Normalize products to ensure defaults
+          const normalizedProducts = parsedProducts.map(normalizeProduct);
+          setProductsState(normalizedProducts);
           setLoading(false);
           return;
         } catch (e) {
@@ -39,8 +60,10 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       // Load from CSV if no stored data
       const { data } = await getProducts();
       if (data) {
-        setProductsState(data);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        // Normalize products to ensure defaults
+        const normalizedProducts = data.map(normalizeProduct);
+        setProductsState(normalizedProducts);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedProducts));
       }
       setLoading(false);
     }
@@ -65,7 +88,8 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       if (index === -1) return prev;
       
       const newProducts = [...prev];
-      newProducts[index] = updatedProduct;
+      // Normalize the updated product to ensure defaults
+      newProducts[index] = normalizeProduct(updatedProduct);
       return newProducts;
     });
   };
@@ -78,8 +102,10 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     const { data } = await getProducts();
     if (data) {
-      setProductsState(data);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      // Normalize products to ensure defaults
+      const normalizedProducts = data.map(normalizeProduct);
+      setProductsState(normalizedProducts);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedProducts));
     }
     setLoading(false);
   };

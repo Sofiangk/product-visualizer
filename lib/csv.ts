@@ -13,14 +13,44 @@ export async function readProducts(): Promise<Product[]> {
       skipEmptyLines: true,
       dynamicTyping: false, // Keep all values as strings to preserve barcodes
       transform: (value: string, field: string) => {
+        // Filter out pandas "nan" values and empty strings
+        if (value === 'nan' || value === 'NaN' || value === 'None' || !value || value.trim() === '') {
+          // Set default values for Price and Quantity
+          if (field === 'Price' || field === 'Quantity') {
+            return '1';
+          }
+          return '';
+        }
+        
         // Ensure numeric fields that should remain as strings are preserved
         if (field === 'Barcode' || field === 'ID' || field === 'Price' || field === 'Quantity') {
-          return value.trim();
+          const trimmed = value.trim();
+          // If Price or Quantity is "0" or empty, set to "1"
+          if ((field === 'Price' || field === 'Quantity') && (trimmed === '0' || trimmed === '')) {
+            return '1';
+          }
+          return trimmed;
         }
-        return value;
+        return value.trim();
       },
       complete: (results) => {
-        resolve(results.data as Product[]);
+        // Post-process to ensure Price and Quantity defaults
+        const products = (results.data as Product[]).map((product) => {
+          // Set Price to "1" if missing or "0"
+          if (!product.Price || product.Price === '0' || product.Price.trim() === '' || 
+              product.Price.toLowerCase() === 'nan' || product.Price === 'NaN' || product.Price === 'None') {
+            product.Price = '1';
+          }
+          
+          // Set Quantity to "1" if missing or "0"
+          if (!product.Quantity || product.Quantity === '0' || product.Quantity.trim() === '' || 
+              product.Quantity.toLowerCase() === 'nan' || product.Quantity === 'NaN' || product.Quantity === 'None') {
+            product.Quantity = '1';
+          }
+          
+          return product;
+        });
+        resolve(products);
       },
       error: (error: any) => {
         reject(error);

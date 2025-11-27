@@ -116,13 +116,13 @@ export function ImportDialog({ onImport }: ImportDialogProps) {
               <Button
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full"
+                className="flex-1 min-w-0"
               >
-                <FileUp className="mr-2 h-4 w-4" />
-                {file ? file.name : "Choose CSV file"}
+                <FileUp className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">{file ? file.name : "Choose CSV file"}</span>
               </Button>
               {file && (
-                <Button variant="ghost" size="sm" onClick={handleReset}>
+                <Button variant="ghost" size="sm" onClick={handleReset} className="shrink-0">
                   Clear
                 </Button>
               )}
