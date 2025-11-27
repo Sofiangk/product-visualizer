@@ -37,7 +37,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Image as ImageIcon, Package, FileText, Plus, X } from 'lucide-react';
+import {
+  Loader2,
+  Image as ImageIcon,
+  Package,
+  FileText,
+  Plus,
+  X,
+} from 'lucide-react';
 
 interface ProductDialogProps {
   product: Product;
@@ -477,17 +484,22 @@ export function ProductDialog({
 
                     {/* Additional Images Section */}
                     <div>
-                      <h3 className="text-sm font-medium mb-4">Additional Images</h3>
+                      <h3 className="text-sm font-medium mb-4">
+                        Additional Images
+                      </h3>
                       <FormDescription className="mb-4">
-                        Add multiple images for product gallery. Images will be exported as pipe-separated URLs for Magento.
+                        Add multiple images for product gallery. Images will be
+                        exported as pipe-separated URLs for Magento.
                       </FormDescription>
-                      
+
                       <FormField
                         control={form.control}
                         name="Additional Images"
                         render={({ field }) => {
-                          const images = field.value ? field.value.split('|').filter(Boolean) : [];
-                          
+                          const images = field.value
+                            ? field.value.split('|').filter(Boolean)
+                            : [];
+
                           const addImage = (url: string) => {
                             if (url.trim()) {
                               const newImages = [...images, url.trim()];
@@ -496,7 +508,9 @@ export function ProductDialog({
                           };
 
                           const removeImage = (index: number) => {
-                            const newImages = images.filter((_, i) => i !== index);
+                            const newImages = images.filter(
+                              (_, i) => i !== index
+                            );
                             field.onChange(newImages.join('|') || '');
                           };
 
@@ -528,7 +542,8 @@ export function ProductDialog({
                                       variant="outline"
                                       size="sm"
                                       onClick={(e) => {
-                                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                        const input = e.currentTarget
+                                          .previousElementSibling as HTMLInputElement;
                                         if (input?.value) {
                                           addImage(input.value);
                                           input.value = '';
@@ -544,14 +559,18 @@ export function ProductDialog({
                                   {images.length > 0 && (
                                     <div className="space-y-3">
                                       {images.map((url, index) => (
-                                        <div key={index} className="flex gap-3 items-start p-3 border rounded-lg">
+                                        <div
+                                          key={index}
+                                          className="flex gap-3 items-start p-3 border rounded-lg"
+                                        >
                                           <div className="flex-shrink-0 w-20 h-20 bg-muted rounded-md overflow-hidden flex items-center justify-center">
                                             <img
                                               src={url}
                                               alt={`Additional ${index + 1}`}
                                               className="max-w-full max-h-full object-contain"
                                               onError={(e) => {
-                                                e.currentTarget.style.display = 'none';
+                                                e.currentTarget.style.display =
+                                                  'none';
                                               }}
                                             />
                                             {!url && (
@@ -561,7 +580,12 @@ export function ProductDialog({
                                           <div className="flex-1 min-w-0">
                                             <Input
                                               value={url}
-                                              onChange={(e) => updateImage(index, e.target.value)}
+                                              onChange={(e) =>
+                                                updateImage(
+                                                  index,
+                                                  e.target.value
+                                                )
+                                              }
                                               placeholder="Image URL"
                                               type="url"
                                               className="text-sm"
@@ -586,13 +610,16 @@ export function ProductDialog({
 
                                   {images.length === 0 && (
                                     <div className="text-sm text-muted-foreground text-center py-4">
-                                      No additional images. Add URLs above to create a product gallery.
+                                      No additional images. Add URLs above to
+                                      create a product gallery.
                                     </div>
                                   )}
                                 </div>
                               </FormControl>
                               <FormDescription>
-                                {images.length} additional image{images.length !== 1 ? 's' : ''} (pipe-separated for Magento export)
+                                {images.length} additional image
+                                {images.length !== 1 ? 's' : ''} (pipe-separated
+                                for Magento export)
                               </FormDescription>
                               <FormMessage />
                             </FormItem>

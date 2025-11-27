@@ -7,11 +7,14 @@ A modern, responsive product catalog management system built with Next.js 16, fe
 - 📱 **Mobile-First Design** - Fully responsive with optimized mobile experience
 - 🔍 **Advanced Filtering** - Search, filter by category, and image availability
 - 📊 **Multiple Views** - Switch between table and grid layouts
+- 🖼️ **Image Carousel** - Automatic image carousel in product cards when multiple images are available
+- 🍞 **Category Breadcrumbs** - Clear category hierarchy display (cat > sub-cat) in product cards
 - ✏️ **Inline Editing** - Quick category updates with dropdown selection
-- 📝 **Full Product Editor** - Comprehensive product editing dialog
+- 📝 **Full Product Editor** - Comprehensive product editing dialog with tabbed interface
 - 🌐 **Bilingual Support** - English and Arabic descriptions with RTL support
 - 📤 **Import/Export** - CSV import/export with Magento format support
 - 🏷️ **Smart Categorization** - 8 main categories with validated subcategories
+- 💾 **Data Persistence** - Client-side localStorage persistence for product edits
 - 🎨 **Modern UI** - Built with Radix UI and Tailwind CSS
 
 ## Product Categories
@@ -144,10 +147,19 @@ The app expects CSV files with these columns:
 - Main Category (EN)
 - Sub-Category (EN)
 - Image
+- Additional Images (pipe-separated URLs: `url1|url2|url3`)
 - Short Description En
 - Long Description En
 - Short Description Ar
 - Long Description Ar
+
+### Product Cards
+
+Product cards in grid view feature:
+- **Image Carousel**: Automatically cycles through multiple images (main + additional) every 3 seconds
+- **Navigation Controls**: Hover to reveal previous/next arrows and image indicators
+- **Category Breadcrumbs**: Shows category hierarchy as "Main Category > Sub-Category"
+- **Quick Edit**: Click "Edit" button to open full product editor
 
 ## License
 

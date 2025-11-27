@@ -136,14 +136,25 @@ export function ProductCard({ product }: ProductCardProps) {
               {product.Price}
             </Badge>
           </div>
-          <div className="flex flex-wrap gap-1 mt-2">
-            <Badge variant="outline" className="text-xs">
-              {product["Main Category (EN)"]}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {product["Sub-Category (EN)"]}
-            </Badge>
-          </div>
+          {/* Breadcrumb: cat > sub-cat */}
+          {(product["Main Category (EN)"] || product["Sub-Category (EN)"]) && (
+            <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+              {product["Main Category (EN)"] && (
+                <>
+                  <span className="truncate">{product["Main Category (EN)"]}</span>
+                  {product["Sub-Category (EN)"] && (
+                    <>
+                      <ChevronRight className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{product["Sub-Category (EN)"]}</span>
+                    </>
+                  )}
+                </>
+              )}
+              {!product["Main Category (EN)"] && product["Sub-Category (EN)"] && (
+                <span className="truncate">{product["Sub-Category (EN)"]}</span>
+              )}
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-4 pt-2 flex-1">
           <p className="text-sm text-muted-foreground line-clamp-3">
