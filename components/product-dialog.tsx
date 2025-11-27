@@ -88,7 +88,7 @@ export function ProductDialog({ product, trigger, open, onOpenChange }: ProductD
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] sm:w-[90vw] flex flex-col gap-0 p-0">
+      <DialogContent className="max-w-[1400px] max-h-[90vh] w-[98vw] flex flex-col gap-0 p-0">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="text-2xl">Edit Product</DialogTitle>
           <DialogDescription>
