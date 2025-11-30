@@ -396,7 +396,7 @@ export function ExportDialog({ products, selectedRows }: ExportDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" size="sm" className="h-8">
           <Download className="mr-2 h-4 w-4" />
           Export CSV
         </Button>

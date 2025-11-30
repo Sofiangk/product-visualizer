@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
       async start(controller) {
         try {
           // Run Python scraper
-          const pythonProcess = spawn('python3', [scraperPath], {
+          const outputFilename = `${path.parse(filename).name}_updated.csv`;
+          const pythonProcess = spawn('python3', [scraperPath, filename, outputFilename], {
             cwd: projectRoot,
           });
 

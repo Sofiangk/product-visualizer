@@ -98,7 +98,7 @@ export function DataTableToolbar<TData>({
               size="sm"
               onClick={onUndo}
               disabled={!canUndo}
-              className="h-7 px-2"
+              className="h-8 px-2"
               title="Undo (Ctrl+Z)"
             >
               <Undo2 className="h-4 w-4" />
@@ -108,7 +108,7 @@ export function DataTableToolbar<TData>({
               size="sm"
               onClick={onRedo}
               disabled={!canRedo}
-              className="h-7 px-2"
+              className="h-8 px-2"
               title="Redo (Ctrl+Y)"
             >
               <Redo2 className="h-4 w-4" />
