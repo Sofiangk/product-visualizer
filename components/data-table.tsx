@@ -32,10 +32,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { LayoutGrid, List, Settings2 } from "lucide-react";
+import { LayoutGrid, List, Settings2, Undo2, Redo2 } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ProductCard } from "./product-card";
 import { Product } from "@/lib/schema";
+import { useKeyboardShortcuts } from "@/lib/use-keyboard-shortcuts";
+import { useHistory } from "@/lib/use-history";
 
 import { DataTableToolbar } from "./data-table-toolbar";
 
@@ -67,7 +69,11 @@ export function DataTable<TData, TValue>({
     pageSize: 10,
   });
   const scrollAreaRef = React.useRef<HTMLDivElement>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
   const prevViewRef = React.useRef<"table" | "grid">(view);
+  
+  // Undo/Redo history
+  const history = useHistory();
 
   const table = useReactTable({
     data,
@@ -130,7 +136,62 @@ export function DataTable<TData, TValue>({
     }
   }, [table.getState().pagination.pageIndex]);
 
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'k',
+      ctrl: true,
+      callback: (e) => {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      },
+      description: 'Focus search',
+    },
+    {
+      key: 'z',
+      ctrl: true,
+      callback: (e) => {
+        e.preventDefault();
+        if (history.canUndo() && onDataChange) {
+          const previous = history.undo();
+          if (previous) {
+            onDataChange(previous as TData[]);
+          }
+        }
+      },
+      description: 'Undo',
+    },
+    {
+      key: 'y',
+      ctrl: true,
+      callback: (e) => {
+        e.preventDefault();
+        if (history.canRedo() && onDataChange) {
+          const next = history.redo();
+          if (next) {
+            onDataChange(next as TData[]);
+          }
+        }
+      },
+      description: 'Redo',
+    },
+    {
+      key: 'Escape',
+      callback: () => {
+        table.getColumn("Product")?.setFilterValue("");
+        searchInputRef.current?.blur();
+      },
+      description: 'Clear search',
+    },
+  ]);
 
+  // Update history when data changes
+  React.useEffect(() => {
+    if (data.length > 0) {
+      history.set(data as Product[]);
+    }
+  }, [data]);
 
 // ... inside DataTable component
 
@@ -141,7 +202,27 @@ export function DataTable<TData, TValue>({
           <DataTableToolbar 
             table={table} 
             onImport={onDataChange ? (products) => onDataChange(products as TData[]) : undefined}
-            onReset={onReset}
+            onReset={() => {
+              if (onReset) {
+                onReset();
+                history.clear(); // Clear undo/redo history when resetting
+              }
+            }}
+            searchInputRef={searchInputRef}
+            canUndo={history.canUndo()}
+            canRedo={history.canRedo()}
+            onUndo={() => {
+              if (history.canUndo() && onDataChange) {
+                const previous = history.undo();
+                if (previous) onDataChange(previous as TData[]);
+              }
+            }}
+            onRedo={() => {
+              if (history.canRedo() && onDataChange) {
+                const next = history.redo();
+                if (next) onDataChange(next as TData[]);
+              }
+            }}
           />
         </div>
         <div className="flex items-center gap-2 order-1 sm:order-2 justify-end">

@@ -19,6 +19,7 @@ export const productSchema = z.object({
   "Long Description En": z.string().optional(),
   "Short Description Ar": z.string().optional(),
   "Long Description Ar": z.string().optional(),
+  Notes: z.string().optional(), // Internal notes/comments (not exported)
 }).refine((data) => {
   const validSubCategories = CATEGORY_MAPPING[data["Main Category (EN)"]] || [];
   return validSubCategories.includes(data["Sub-Category (EN)"]);

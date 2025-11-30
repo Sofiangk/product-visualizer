@@ -317,6 +317,31 @@ export function ProductDialog({
                         />
                       </div>
                     </div>
+
+                    <Separator />
+
+                    {/* Internal Notes */}
+                    <FormField
+                      control={form.control}
+                      name="Notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Internal Notes</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              placeholder="Add internal notes or comments about this product (not exported)"
+                              className="resize-y min-h-[100px]"
+                              rows={4}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Private notes for your team. These won't be included in exports.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </TabsContent>
 
                   <TabsContent value="descriptions" className="space-y-6 mt-6">

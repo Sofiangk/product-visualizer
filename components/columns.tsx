@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Product } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { CategoryEditableCell } from "./category-editable-cell";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ImagePreview } from "./image-preview";
 import { ProductActionsCell } from "./product-actions-cell";
+import { ProductDialog } from "./product-dialog";
 
 export const columns: ColumnDef<Product>[] = [
   {
@@ -99,7 +101,25 @@ export const columns: ColumnDef<Product>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => <div className="max-w-[250px] truncate font-medium" title={row.getValue("Product")}>{row.getValue("Product")}</div>,
+    cell: ({ row }) => {
+      const [dialogOpen, setDialogOpen] = React.useState(false);
+      return (
+        <>
+          <div 
+            className="max-w-[250px] truncate font-medium cursor-pointer hover:text-primary hover:underline" 
+            title={`Click to edit: ${row.getValue("Product")}`}
+            onClick={() => setDialogOpen(true)}
+          >
+            {row.getValue("Product")}
+          </div>
+          <ProductDialog 
+            product={row.original} 
+            open={dialogOpen} 
+            onOpenChange={setDialogOpen}
+          />
+        </>
+      );
+    },
   },
   {
     accessorKey: "Price",
