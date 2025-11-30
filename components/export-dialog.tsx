@@ -394,7 +394,16 @@ export function ExportDialog({ products, selectedRows }: ExportDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (isOpen) {
+        if (selectedRows && selectedRows.length > 0) {
+          setExportScope("selected");
+        } else {
+          setExportScope("all");
+        }
+      }
+    }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-8">
           <Download className="mr-2 h-4 w-4" />
