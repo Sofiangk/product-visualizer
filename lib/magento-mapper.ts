@@ -69,7 +69,7 @@ export function mapToMagento(products: Product[]): MagentoProduct[] {
       url_key: urlKey,
       meta_title: product.Product,
       meta_keywords: "",
-      meta_description: product["Short Description En"] || "",
+      meta_description: (product["Short Description En"] || "").substring(0, 255),
       base_image: imageUrl,
       small_image: imageUrl,
       small_image_label: "",
