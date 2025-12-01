@@ -369,7 +369,12 @@ export function ExportDialog({ products, selectedRows }: ExportDialogProps) {
         const filteredProduct: any = {};
         selectedColumns.forEach((col) => {
           if (col !== "Website") {
-            filteredProduct[col] = (product as any)[col];
+            let value = (product as any)[col];
+            // Prepend tab to Barcode to force Excel to treat it as text
+            if (col === "Barcode" && value) {
+              value = `\t${value}`;
+            }
+            filteredProduct[col] = value;
           }
         });
         return filteredProduct;
