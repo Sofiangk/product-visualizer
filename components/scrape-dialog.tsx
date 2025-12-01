@@ -25,7 +25,7 @@ interface ScrapeDialogProps {
   onDataChange?: (products: Product[]) => void;
 }
 
-type ScraperType = 'amazon' | 'additional_images';
+type ScraperType = 'amazon' | 'amazon_js' | 'additional_images';
 type ScraperStatus = 'idle' | 'running' | 'success' | 'error';
 
 export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
@@ -100,12 +100,15 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
         ? uploadedFile.name 
         : `products_to_scrape_${timestamp}.csv`;
 
-      const response = await fetch('/api/scrape', {
+      const endpoint = selectedScraper === 'amazon_js' ? '/api/scrape-js' : '/api/scrape';
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          products: sourceType === 'table' ? filteredProducts : [], // JS scraper expects products array
           scraper: selectedScraper,
-          csvData,
+          csvData, // Python scraper expects CSV string
           filename,
         }),
       });
@@ -114,43 +117,56 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
+      if (selectedScraper === 'amazon_js') {
+        const result = await response.json();
+        if (result.error) throw new Error(result.error);
+        
+        setScraperStatus('success');
+        setScraperOutput(prev => [...prev, '\n✓ JS Scraping completed successfully!', `\n${result.message}`]);
+        
+        if (onDataChange && result.products) {
+          onDataChange(result.products);
+        }
+      } else {
+        // Stream handling for Python scraper
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
 
-      if (!reader) {
-        throw new Error('No response body');
-      }
+        if (!reader) {
+          throw new Error('No response body');
+        }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter(Boolean);
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n').filter(Boolean);
 
-        for (const line of lines) {
-          try {
-            const message = JSON.parse(line);
-            
-            if (message.type === 'stdout' || message.type === 'stderr') {
-              setScraperOutput(prev => [...prev, message.data]);
-            } else if (message.type === 'complete') {
-              setScraperStatus('success');
-              setScraperOutput(prev => [...prev, '\n✓ Scraping completed successfully!']);
+          for (const line of lines) {
+            try {
+              const message = JSON.parse(line);
               
-              // Parse and update products
-              if (onDataChange && message.data) {
-                const parsed = Papa.parse(message.data, { header: true });
-                if (parsed.data) {
-                  onDataChange(parsed.data as Product[]);
+              if (message.type === 'stdout' || message.type === 'stderr') {
+                setScraperOutput(prev => [...prev, message.data]);
+              } else if (message.type === 'complete') {
+                setScraperStatus('success');
+                setScraperOutput(prev => [...prev, '\n✓ Scraping completed successfully!']);
+                
+                // Parse and update products
+                if (onDataChange && message.data) {
+                  const parsed = Papa.parse(message.data, { header: true });
+                  if (parsed.data) {
+                    onDataChange(parsed.data as Product[]);
+                  }
                 }
+              } else if (message.type === 'error') {
+                setScraperStatus('error');
+                setScraperOutput(prev => [...prev, `\n✗ Error: ${message.data}`]);
               }
-            } else if (message.type === 'error') {
-              setScraperStatus('error');
-              setScraperOutput(prev => [...prev, `\n✗ Error: ${message.data}`]);
+            } catch (e) {
+              console.error('Error parsing message:', e);
             }
-          } catch (e) {
-            console.error('Error parsing message:', e);
           }
         }
       }
@@ -360,10 +376,21 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                           <RadioGroupItem value="amazon" id="amazon" className="mt-1" />
                           <div className="flex-1">
                             <Label htmlFor="amazon" className="font-medium cursor-pointer">
-                              Amazon Scraper (Bilingual)
+                              Amazon Scraper (Python)
                             </Label>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Scrapes images and descriptions (EN & AR) from Amazon.sa
+                              Legacy Python scraper. Requires Python environment.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-start space-x-2 border rounded-lg p-3 bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                          <RadioGroupItem value="amazon_js" id="amazon_js" className="mt-1" />
+                          <div className="flex-1">
+                            <Label htmlFor="amazon_js" className="font-medium cursor-pointer flex items-center gap-2">
+                              Amazon Scraper (JS) <span className="text-[10px] bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-full">Experimental</span>
+                            </Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Runs directly in the app using Playwright (Node.js). No Python required.
                             </p>
                           </div>
                         </div>
