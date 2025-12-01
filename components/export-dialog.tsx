@@ -370,6 +370,12 @@ export function ExportDialog({ products, selectedRows }: ExportDialogProps) {
         selectedColumns.forEach((col) => {
           if (col !== "Website") {
             let value = (product as any)[col];
+            
+            // SKU Fallback: If Barcode is missing, use SKU-{ID}
+            if (col === "Barcode" && (!value || value.trim() === "")) {
+              value = `SKU-${product.ID}`;
+            }
+
             // Prepend tab to Barcode to force Excel to treat it as text
             if (col === "Barcode" && value) {
               value = `\t${value}`;
