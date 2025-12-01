@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ProductsProvider } from "@/lib/products-context";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
       >
         <ThemeProvider defaultTheme="light" storageKey="saidalia-theme">
           <ProductsProvider>{children}</ProductsProvider>
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
