@@ -371,9 +371,12 @@ export function ExportDialog({ products, selectedRows }: ExportDialogProps) {
           if (col !== "Website") {
             let value = (product as any)[col];
             
-            // SKU Fallback: If Barcode is missing, use SKU-{ID}
+            // SKU Fallback: If Barcode is missing, use CAT-SUB-ID format (e.g., MABBAT004)
             if (col === "Barcode" && (!value || value.trim() === "")) {
-              value = `SKU-${product.ID}`;
+              const mainCat = (product["Main Category (EN)"] || "GEN").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+              const subCat = (product["Sub-Category (EN)"] || "GEN").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+              const id = (product.ID || "0").toString().padStart(3, "0");
+              value = `${mainCat}${subCat}${id}`;
             }
 
             // Prepend tab to Barcode to force Excel to treat it as text
