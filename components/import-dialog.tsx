@@ -20,6 +20,25 @@ interface ImportDialogProps {
   onImport: (products: Product[]) => void;
 }
 
+// Helper to expand scientific notation (e.g., "8.06E+12" -> "8060000000000")
+function expandScientificNotation(value: string): string {
+  if (!value) return "";
+  const trimmed = value.trim();
+  // Regex to detect scientific notation
+  if (/^[0-9]+(\.[0-9]+)?[eE][+-]?[0-9]+$/.test(trimmed)) {
+    try {
+      const number = Number(trimmed);
+      if (!isNaN(number)) {
+        return number.toLocaleString('fullwide', { useGrouping: false });
+      }
+    } catch (e) {
+      // If conversion fails, return original
+      return trimmed;
+    }
+  }
+  return trimmed;
+}
+
 export function ImportDialog({ onImport }: ImportDialogProps) {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -44,7 +63,12 @@ export function ImportDialog({ onImport }: ImportDialogProps) {
       header: true,
       skipEmptyLines: true,
       dynamicTyping: false, // Keep all values as strings to preserve barcodes
-      transform: (value: string) => value.trim(),
+      transform: (value: string, field: string | number) => {
+        if (field === "Barcode") {
+          return expandScientificNotation(value);
+        }
+        return value.trim();
+      },
       complete: (results) => {
         const data = results.data as Product[];
         setPreview(data.slice(0, 5)); // Show first 5 rows
@@ -62,7 +86,12 @@ export function ImportDialog({ onImport }: ImportDialogProps) {
       header: true,
       skipEmptyLines: true,
       dynamicTyping: false, // Keep all values as strings to preserve barcodes
-      transform: (value: string) => value.trim(),
+      transform: (value: string, field: string | number) => {
+        if (field === "Barcode") {
+          return expandScientificNotation(value);
+        }
+        return value.trim();
+      },
       complete: (results) => {
         const data = results.data as Product[];
         onImport(data);
