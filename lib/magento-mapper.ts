@@ -30,6 +30,8 @@ export interface MagentoProduct {
 }
 
 export function mapToMagento(products: Product[]): MagentoProduct[] {
+  const usedSkus = new Set<string>();
+
   return products.map((product) => {
     // Create URL-friendly key from product name
     const urlKey = product.Product
@@ -51,8 +53,34 @@ export function mapToMagento(products: Product[]): MagentoProduct[] {
     // Use product image for all image fields
     const imageUrl = product.Image || "";
 
+    // SKU Generation Logic
+    let sku = "";
+    const barcode = product.Barcode ? product.Barcode.trim() : "";
+    
+    // Check if barcode is valid (not empty and not scientific notation)
+    const isScientific = /^[0-9]+(\.[0-9]+)?[eE][+-]?[0-9]+$/.test(barcode);
+    
+    if (barcode && !isScientific) {
+      sku = barcode;
+    } else {
+      // Generate fallback SKU: CAT-SUB-ID
+      const mainCatPrefix = (product["Main Category (EN)"] || "GEN").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+      const subCatPrefix = (product["Sub-Category (EN)"] || "GEN").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+      const id = (product.ID || "0").toString().padStart(3, "0");
+      sku = `${mainCatPrefix}${subCatPrefix}${id}`;
+    }
+
+    // Ensure Uniqueness
+    let finalSku = sku;
+    let counter = 1;
+    while (usedSkus.has(finalSku)) {
+      finalSku = `${sku}-${counter}`;
+      counter++;
+    }
+    usedSkus.add(finalSku);
+
     return {
-      sku: product.Barcode || product.ID || `SKU-${product.ID}`,
+      sku: finalSku,
       store_view_code: "",
       attribute_set_code: "Default",
       product_type: "simple",
