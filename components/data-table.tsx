@@ -136,6 +136,11 @@ export function DataTable<TData, TValue>({
     }
   }, [table.getState().pagination.pageIndex]);
 
+  // Reset pagination when filters change
+  React.useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [columnFilters, table.getState().globalFilter]);
+
   // Keyboard shortcuts
   useKeyboardShortcuts([
     {

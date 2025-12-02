@@ -8,8 +8,7 @@ import { Input } from "@/components/ui/input";
 import { DataTableFacetedFilter } from "./data-table-faceted-filter";
 import { MAIN_CATEGORIES } from "@/lib/categories";
 import { ExportDialog } from "./export-dialog";
-import { ImportDialog } from "./import-dialog";
-import { MergeDialog } from "./merge-dialog";
+import { DataManagementDialog } from "./data-management-dialog";
 import { ScrapeDialog } from "./scrape-dialog";
 import { ThemeToggle } from "./theme-toggle";
 import { KeyboardShortcutsHelp } from "./keyboard-shortcuts-help";
@@ -126,8 +125,7 @@ export function DataTableToolbar<TData>({
         {/* Data Operations Group */}
         <div className="flex items-center gap-1">
           <ScrapeDialog products={products} onDataChange={onImport} />
-          {onImport && <ImportDialog onImport={onImport} />}
-          {onImport && <MergeDialog currentProducts={products} onMerge={onImport} />}
+          {onImport && <DataManagementDialog currentProducts={products} onUpdate={onImport} />}
           <ExportDialog products={products} selectedRows={selectedRows} />
         </div>
         
