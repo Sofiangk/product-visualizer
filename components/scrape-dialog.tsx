@@ -172,7 +172,28 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
       }
     } catch (error) {
       setScraperStatus('error');
-      setScraperOutput(prev => [...prev, `\n✗ Error: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+      
+      // Check if it's a setup error with instructions
+      if (error instanceof Error) {
+        try {
+          const errorResponse = await fetch('/api/scrape', { method: 'POST', body: JSON.stringify({}) })
+            .then(r => r.json());
+          
+          if (errorResponse.setup) {
+            setScraperOutput(prev => [
+              ...prev, 
+              `\n✗ Setup Required: ${errorResponse.error}`,
+              `\n📋 Instructions: ${errorResponse.setup}`
+            ]);
+          } else {
+            setScraperOutput(prev => [...prev, `\n✗ Error: ${error.message}`]);
+          }
+        } catch {
+          setScraperOutput(prev => [...prev, `\n✗ Error: ${error.message}`]);
+        }
+      } else {
+        setScraperOutput(prev => [...prev, `\n✗ Error: Unknown error`]);
+      }
     }
   };
 

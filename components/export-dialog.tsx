@@ -22,7 +22,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Papa from "papaparse";
-import { Download } from "lucide-react";
+import { Upload } from "lucide-react";
 
 interface ExportDialogProps {
   products: Product[];
@@ -420,7 +420,7 @@ export function ExportDialog({ products, selectedRows }: ExportDialogProps) {
     }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-8">
-          <Download className="mr-2 h-4 w-4" />
+          <Upload className="mr-2 h-4 w-4" />
           Export CSV
         </Button>
       </DialogTrigger>

@@ -45,6 +45,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Simple check: verify venv Python exists, otherwise use system Python
+    const venvPython = path.join(projectRoot, 'venv', 'bin', 'python3');
+    const pythonCmd = fs.existsSync(venvPython) ? venvPython : 'python3';
+
     // Write CSV data to file
     fs.writeFileSync(inputPath, csvData, 'utf-8');
 
@@ -53,9 +57,10 @@ export async function POST(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          // Run Python scraper
+          // Run Python scraper using venv
           const outputFilename = `${path.parse(filename).name}_updated.csv`;
-          const pythonProcess = spawn('python3', [scraperPath, filename, outputFilename], {
+          
+          const pythonProcess = spawn(pythonCmd, [scraperPath, filename, outputFilename], {
             cwd: projectRoot,
           });
 

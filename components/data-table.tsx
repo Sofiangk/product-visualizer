@@ -323,7 +323,7 @@ export function DataTable<TData, TValue>({
                 </TableBody>
               </Table>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 p-4">
                     {table.getRowModel().rows.map((row) => (
                         <ProductCard key={row.id} product={row.original as Product} />
                     ))}
