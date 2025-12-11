@@ -30,24 +30,50 @@ export interface MagentoProduct {
 }
 
 export function mapToMagento(products: Product[]): MagentoProduct[] {
+  // Deduplicate products based on barcode/SKU
+  // Keep only the first occurrence of each unique barcode
+  const seenBarcodes = new Set<string>();
+  const deduplicatedProducts = products.filter((product) => {
+    const barcode = product.Barcode ? product.Barcode.trim() : "";
+    
+    // Skip products with empty barcodes (they'll get generated SKUs)
+    if (!barcode) {
+      return true;
+    }
+    
+    // Check if barcode is scientific notation (invalid)
+    const isScientific = /^[0-9]+(\.[0-9]+)?[eE][+-]?[0-9]+$/.test(barcode);
+    if (isScientific) {
+      return true; // Keep these, they'll get generated SKUs
+    }
+    
+    // Filter out duplicates
+    if (seenBarcodes.has(barcode)) {
+      return false; // Skip duplicate
+    }
+    
+    seenBarcodes.add(barcode);
+    return true; // Keep first occurrence
+  });
+
   const usedSkus = new Set<string>();
 
-  return products.map((product) => {
+  return deduplicatedProducts.map((product) => {
     // Create URL-friendly key from product name
     const urlKey = product.Product
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
-    // Combine categories - format: "Parent/Child,Parent,All Products,Default Category"
+    // Combine categories - format: "Default Category/Parent/Child,Default Category/Parent,All Products,Default Category"
     const mainCat = product["Main Category (EN)"] || "";
     const subCat = product["Sub-Category (EN)"] || "";
     
     let categories = "All Products,Default Category";
     if (mainCat && subCat) {
-      categories = `${mainCat}/${subCat},${mainCat},All Products,Default Category`;
+      categories = `Default Category/${mainCat}/${subCat},Default Category/${mainCat},All Products,Default Category`;
     } else if (mainCat) {
-      categories = `${mainCat},All Products,Default Category`;
+      categories = `Default Category/${mainCat},All Products,Default Category`;
     }
 
     // Use product image for all image fields
@@ -70,7 +96,7 @@ export function mapToMagento(products: Product[]): MagentoProduct[] {
       sku = `${mainCatPrefix}${subCatPrefix}${id}`;
     }
 
-    // Ensure Uniqueness
+    // Ensure Uniqueness (should rarely be needed now due to deduplication)
     let finalSku = sku;
     let counter = 1;
     while (usedSkus.has(finalSku)) {
