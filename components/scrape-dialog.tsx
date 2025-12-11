@@ -11,7 +11,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Download, Upload, Info, FileCode2, Play, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Sparkles, Download, Upload, Info, FileCode2, Play, Loader2, CheckCircle2, XCircle, Lock } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
@@ -26,7 +27,7 @@ interface ScrapeDialogProps {
   onDataChange?: (products: Product[]) => void;
 }
 
-type ScraperType = 'amazon' | 'amazon_js' | 'additional_images' | 'migrate_images';
+type ScraperType = 'amazon' | 'amazon_js' | 'additional_images' | 'additional_images_js' | 'migrate_images';
 type ScraperStatus = 'idle' | 'running' | 'success' | 'error';
 
 export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
@@ -41,6 +42,10 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
   const [scraperStatus, setScraperStatus] = useState<ScraperStatus>('idle');
   const [scraperOutput, setScraperOutput] = useState<string[]>([]);
   const [showExportInstructions, setShowExportInstructions] = useState(false);
+  const [password, setPassword] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const getFilteredProducts = () => {
     return products.filter((product) => {
@@ -66,6 +71,15 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file);
+    }
+  };
+
+  const handleStopScraper = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+      setScraperStatus('error');
+      setScraperOutput(prev => [...prev, '\n⚠ Scraping stopped by user']);
     }
   };
 
@@ -174,10 +188,79 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
          if (onDataChange) {
              onDataChange(migratedProducts);
          }
-         return;
-    }
+          return;
+     }
 
-    // Standard Scraper Logic
+     // Handle Additional Images JS Scraper
+     if (selectedScraper === 'additional_images_js') {
+        setScraperStatus('running');
+        setScraperOutput([]);
+
+        let targetProducts = filteredProducts;
+        
+        if (sourceType === 'file') {
+            if (!uploadedFile) { alert("Please select a CSV file"); return; }
+            try {
+               const text = await new Promise<string>((resolve, reject) => {
+                   const reader = new FileReader();
+                   reader.onload = (e) => resolve(e.target?.result as string);
+                   reader.onerror = (e) => reject(e);
+                   reader.readAsText(uploadedFile);
+               });
+               const parsed = Papa.parse(text, { header: true });
+               if (parsed.data) {
+                   targetProducts = parsed.data as Product[];
+               }
+            } catch (e) {
+                console.error(e);
+                setScraperStatus('error');
+                setScraperOutput(['Error parsing CSV file']);
+                return;
+            }
+        }
+
+        if (targetProducts.length === 0) {
+            alert(sourceType === 'table' ? "No products match criteria" : "No products found in file");
+            setScraperStatus('idle');
+            return;
+        }
+
+        const controller = new AbortController();
+        setAbortController(controller);
+
+        try {
+            const response = await fetch('/api/scrape-additional-images', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ products: targetProducts }),
+                signal: controller.signal,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.error) throw new Error(result.error);
+            
+            setScraperStatus('success');
+            setScraperOutput(prev => [...prev, '\n✓ Additional Images scraping completed successfully!', `\n${result.message}`]);
+            
+            if (onDataChange && result.products) {
+                onDataChange(result.products);
+            }
+        } catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
+                // Already handled by handleStopScraper
+                return;
+            }
+            setScraperStatus('error');
+            setScraperOutput(prev => [...prev, `\n✗ Error: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+        }
+        return;
+     }
+
+     // Standard Scraper Logic
     if (sourceType === 'table') {
       if (filteredProducts.length === 0) {
         alert("No products match the selected criteria");
@@ -201,6 +284,9 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
     setScraperStatus('running');
     setScraperOutput([]);
 
+    const controller = new AbortController();
+    setAbortController(controller);
+
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
       const filename = sourceType === 'file' && uploadedFile 
@@ -218,6 +304,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
           csvData, // Python scraper expects CSV string
           filename,
         }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -378,27 +465,61 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
             )}
           </DialogHeader>
 
-          {showDevWarning ? (
+          {!isAuthenticated ? (
             <div className="py-6 space-y-6">
-              <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 p-4 rounded-lg flex gap-3">
-                <Info className="h-5 w-5 text-blue-600 dark:text-blue-500 shrink-0 mt-0.5" />
+              <div className="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900 p-4 rounded-lg flex gap-3">
+                <Lock className="h-5 w-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
                 <div className="space-y-2">
-                  <h4 className="font-medium text-blue-900 dark:text-blue-200">Tool Configuration</h4>
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
-                    This menu allows you to enrich product data using scrapers or migrate images to AWS Lightsail.
-                  </p>
-                  <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">
-                    Ensure you have the necessary permissions configured.
+                  <h4 className="font-medium text-amber-900 dark:text-amber-200">Password Required</h4>
+                  <p className="text-sm text-amber-800 dark:text-amber-300">
+                    Please enter the password to access Data Tools.
                   </p>
                 </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const correctPassword = process.env.NEXT_PUBLIC_DATA_TOOLS_PASSWORD || 'admin123';
+                      if (password === correctPassword) {
+                        setIsAuthenticated(true);
+                        setPasswordError('');
+                      } else {
+                        setPasswordError('Incorrect password');
+                      }
+                    }
+                  }}
+                  placeholder="Enter password"
+                  className={passwordError ? 'border-red-500' : ''}
+                />
+                {passwordError && (
+                  <p className="text-sm text-red-600 dark:text-red-400">{passwordError}</p>
+                )}
               </div>
 
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => setShowDevWarning(false)}>
-                  Continue to Tools
+                <Button onClick={() => {
+                  const correctPassword = process.env.NEXT_PUBLIC_DATA_TOOLS_PASSWORD || 'admin123';
+                  if (password === correctPassword) {
+                    setIsAuthenticated(true);
+                    setPasswordError('');
+                  } else {
+                    setPasswordError('Incorrect password');
+                  }
+                }}>
+                  Continue
                 </Button>
               </DialogFooter>
             </div>
@@ -514,6 +635,19 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                           </div>
                         </div>
 
+                        {/* Additional Images JS Scraper */}
+                        <div className="flex items-start space-x-2 border rounded-lg p-3 bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                          <RadioGroupItem value="additional_images_js" id="additional_images_js" className="mt-1" />
+                          <div className="flex-1">
+                            <Label htmlFor="additional_images_js" className="font-medium cursor-pointer flex items-center gap-2">
+                              Additional Images (In-App)
+                            </Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Scrapes multiple product images and Arabic names from Amazon.
+                            </p>
+                          </div>
+                        </div>
+
                         {/* Image Migration (Lightsail) */}
                         <div className="flex items-start space-x-2 border rounded-lg p-3 bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
                           <RadioGroupItem value="migrate_images" id="migrate_images" className="mt-1" />
@@ -550,7 +684,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                     )}
 
                     {/* Action Button: Run (JS) or Download (Python) */}
-                    {(selectedScraper === 'amazon_js' || selectedScraper === 'migrate_images') ? (
+                    {(selectedScraper === 'amazon_js' || selectedScraper === 'additional_images_js' || selectedScraper === 'migrate_images') ? (
                       <Button 
                         onClick={handleRunScraper} 
                         disabled={
@@ -621,9 +755,9 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
 
                   <DialogFooter>
                     {scraperStatus === 'running' ? (
-                      <Button disabled className="w-full sm:w-auto">
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Running...
+                      <Button variant="destructive" onClick={handleStopScraper} className="w-full sm:w-auto">
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Stop Scraper
                       </Button>
                     ) : (
                       <Button onClick={() => {

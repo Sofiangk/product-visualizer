@@ -5,6 +5,8 @@ export const productSchema = z.object({
   ID: z.string(),
   Website: z.string().optional(),
   Product: z.string().min(1, "Product name is required"),
+  "Name En": z.string().optional(),
+  "Name Ar": z.string().optional(),
   Price: z.string().optional(), // Keep as string to avoid parsing issues, or coerce to number
   Barcode: z.string().optional(),
   "Expiry Date": z.string().optional(),
