@@ -19,13 +19,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Papa from "papaparse";
 import { Product } from "@/lib/schema";
+import { migrateImage } from "@/app/actions/migration";
 
 interface ScrapeDialogProps {
   products: Product[];
   onDataChange?: (products: Product[]) => void;
 }
 
-type ScraperType = 'amazon' | 'amazon_js' | 'additional_images';
+type ScraperType = 'amazon' | 'amazon_js' | 'additional_images' | 'migrate_images';
 type ScraperStatus = 'idle' | 'running' | 'success' | 'error';
 
 export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
@@ -71,6 +72,112 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
   const handleRunScraper = async () => {
     let csvData = "";
     
+    // Handle Migration Logic Separate Path
+    if (selectedScraper === 'migrate_images') {
+         setScraperStatus('running');
+         setScraperOutput([]);
+
+         const totalProducts = sourceType === 'table' ? filteredProducts.length : 0;
+         let targetProducts = filteredProducts;
+         
+         if (sourceType === 'file') {
+             if (!uploadedFile) { alert("Please select a CSV file"); return; }
+             try {
+                const text = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target?.result as string);
+                    reader.onerror = (e) => reject(e);
+                    reader.readAsText(uploadedFile);
+                });
+                const parsed = Papa.parse(text, { header: true });
+                if (parsed.data) {
+                    targetProducts = parsed.data as Product[];
+                }
+             } catch (e) {
+                 console.error(e);
+                 setScraperStatus('error');
+                 setScraperOutput(['Error parsing CSV file']);
+                 return;
+             }
+         }
+
+         if (targetProducts.length === 0) {
+             alert(sourceType === 'table' ? "No products match criteria" : "No products found in file");
+             setScraperStatus('idle');
+             return;
+         }
+
+         setScraperOutput(prev => [...prev, `Starting migration for ${targetProducts.length} products...`]);
+         
+         const migratedProducts: Product[] = [];
+         let successCount = 0;
+         let skipCount = 0;
+         let errorCount = 0;
+
+         for (let i = 0; i < targetProducts.length; i++) {
+             const product = { ...targetProducts[i] };
+             const productId = product.ID || product.Product || `p-${i}`;
+             const category = product["Main Category (EN)"] || "uncategorized";
+             
+             setScraperOutput(prev => {
+                 const last = prev[prev.length - 1];
+                 const msg = `Processing ${i+1}/${targetProducts.length}: ${product.Product || 'Unknown Product'}`;
+                 if (last?.startsWith("Processing")) return [...prev.slice(0, -1), msg];
+                 return [...prev, msg];
+             });
+
+             // Migrate Main Image
+             if (product.Image && product.Image.trim()) {
+                 const result = await migrateImage(product.Image, productId, category, 'main');
+                 if (result.success && result.newUrl) {
+                     product.Image = result.newUrl;
+                     if (result.skipped) skipCount++; else successCount++;
+                 } else {
+                     errorCount++;
+                     setScraperOutput(prev => [...prev, `  ✗ Failed main image: ${result.error || 'Unknown error'}`]);
+                 }
+             }
+
+             // Migrate Additional Images
+             if (product["Additional Images"] && product["Additional Images"].trim()) {
+                 const urls = product["Additional Images"].split('|').filter(u => u.trim());
+                 const newUrls: string[] = [];
+                 
+                 for (let j = 0; j < urls.length; j++) {
+                     const result = await migrateImage(urls[j], productId, category, 'additional', j);
+                     if (result.success && result.newUrl) {
+                         newUrls.push(result.newUrl);
+                         if (result.skipped) skipCount++; else successCount++;
+                     } else {
+                         newUrls.push(urls[j]); // Keep original if failed
+                         errorCount++;
+                         setScraperOutput(prev => [...prev, `  ✗ Failed additional image ${j+1}: ${result.error || 'Unknown error'}`]);
+                     }
+                 }
+                 product["Additional Images"] = newUrls.join('|');
+             }
+             
+             migratedProducts.push(product);
+             // Allow UI to update
+             await new Promise(r => setTimeout(r, 0));
+         }
+
+         setScraperStatus('success');
+         setScraperOutput(prev => [
+             ...prev.filter(l => !l.startsWith("Processing")), 
+             `\n✓ Migration Completed!`,
+             `  - Processed: ${targetProducts.length} products`,
+             `  - Images Uploaded/Verified: ${successCount + skipCount}`,
+             `  - Errors: ${errorCount}`
+         ]);
+         
+         if (onDataChange) {
+             onDataChange(migratedProducts);
+         }
+         return;
+    }
+
+    // Standard Scraper Logic
     if (sourceType === 'table') {
       if (filteredProducts.length === 0) {
         alert("No products match the selected criteria");
@@ -253,9 +360,9 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
         <DialogContent className="max-w-3xl max-h-[90vh]">
           <DialogHeader className="flex flex-row items-start justify-between">
             <div className="space-y-1.5 text-left">
-              <DialogTitle>Run Scrapers Locally</DialogTitle>
+              <DialogTitle>Data Tools</DialogTitle>
               <DialogDescription>
-                Enrich product data using Python scrapers.
+                Running scrapers or migrating images.
               </DialogDescription>
             </div>
             {!showDevWarning && (
@@ -264,7 +371,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                 size="icon"
                 className="h-8 w-8 -mt-1"
                 onClick={() => setShowHelp(true)}
-                title="Scraper Instructions"
+                title="Instructions"
               >
                 <Info className="h-5 w-5" />
               </Button>
@@ -273,15 +380,15 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
 
           {showDevWarning ? (
             <div className="py-6 space-y-6">
-              <div className="bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-200 dark:border-yellow-900 p-4 rounded-lg flex gap-3">
-                <Info className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
+              <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 p-4 rounded-lg flex gap-3">
+                <Info className="h-5 w-5 text-blue-600 dark:text-blue-500 shrink-0 mt-0.5" />
                 <div className="space-y-2">
-                  <h4 className="font-medium text-yellow-900 dark:text-yellow-200">Developer Confirmation Required</h4>
-                  <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                    This feature runs Python scripts on your local machine. It requires a configured Python environment with necessary dependencies (playwright, pandas).
+                  <h4 className="font-medium text-blue-900 dark:text-blue-200">Tool Configuration</h4>
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    This menu allows you to enrich product data using scrapers or migrate images to AWS Lightsail.
                   </p>
-                  <p className="text-sm text-yellow-800 dark:text-yellow-300 font-medium">
-                    Only proceed if you are a developer and have set up the environment.
+                  <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">
+                    Ensure you have the necessary permissions configured.
                   </p>
                 </div>
               </div>
@@ -291,7 +398,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                   Cancel
                 </Button>
                 <Button onClick={() => setShowDevWarning(false)}>
-                  I am a Developer
+                  Continue to Tools
                 </Button>
               </DialogFooter>
             </div>
@@ -319,7 +426,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
 
                     {sourceType === 'table' ? (
                       <div className="space-y-4">
-                        <Label>Export products with missing:</Label>
+                        <Label>Filter criteria:</Label>
                         <div className="flex flex-col space-y-2">
                           <div className="flex items-center space-x-2">
                             <Checkbox
@@ -328,7 +435,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                               onCheckedChange={(checked) => setFilterMissingImage(checked as boolean)}
                             />
                             <Label htmlFor="missing-image" className="font-normal cursor-pointer">
-                              Images
+                              Missing Images
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -338,7 +445,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                               onCheckedChange={(checked) => setFilterMissingDescription(checked as boolean)}
                             />
                             <Label htmlFor="missing-description" className="font-normal cursor-pointer">
-                              Descriptions (Short or Long)
+                              Missing Descriptions
                             </Label>
                           </div>
                         </div>
@@ -348,10 +455,10 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                             <Info className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="text-sm space-y-1">
                               <p className="font-medium">
-                                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} will be processed
+                                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} matched
                               </p>
                               <p className="text-muted-foreground">
-                                Choose a scraper to run locally or export CSV for manual processing.
+                                Select an operation below to process these products.
                               </p>
                             </div>
                           </div>
@@ -391,7 +498,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                     <Separator />
 
                     <div className="space-y-3">
-                      <Label>Select Scraper:</Label>
+                      <Label>Select Operation:</Label>
                       <RadioGroup value={selectedScraper} onValueChange={(value) => setSelectedScraper(value as ScraperType)}>
                         
                         {/* JS Scraper (Default) */}
@@ -402,7 +509,20 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                               Amazon Scraper (In-App) <span className="text-[10px] bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded-full">Recommended</span>
                             </Label>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Runs directly in your browser. No setup required.
+                              Runs directly in your browser. Extracts data from Amazon.sa.
+                            </p>
+                          </div>
+                        </div>
+
+                         {/* Image Migration (Lightsail) */}
+                        <div className="flex items-start space-x-2 border rounded-lg p-3 bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
+                          <RadioGroupItem value="migrate_images" id="migrate_images" className="mt-1" />
+                          <div className="flex-1">
+                            <Label htmlFor="migrate_images" className="font-medium cursor-pointer flex items-center gap-2">
+                              Image Migration (Lightsail)
+                            </Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Downloads images and uploads them to your configured AWS Lightsail bucket.
                             </p>
                           </div>
                         </div>
@@ -415,7 +535,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                               Amazon Scraper (Python)
                             </Label>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Download Python script to run locally. Requires Python environment.
+                              Download Python script to run locally.
                             </p>
                           </div>
                         </div>
@@ -456,34 +576,28 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                     )}
 
                     {/* Action Button: Run (JS) or Download (Python) */}
-                    {selectedScraper === 'amazon_js' ? (
+                    {(selectedScraper === 'amazon_js' || selectedScraper === 'migrate_images') ? (
                       <Button 
                         onClick={handleRunScraper} 
                         disabled={
-                          (sourceType === 'table' && (filteredProducts.length === 0 || (!filterMissingImage && !filterMissingDescription))) ||
+                          (sourceType === 'table' && (filteredProducts.length === 0 || (!filterMissingImage && !filterMissingDescription && selectedScraper !== 'migrate_images'))) ||
                           (sourceType === 'file' && !uploadedFile)
                         }
                         className="w-full sm:w-auto"
                       >
                         <Play className="mr-2 h-4 w-4" />
-                        Run Scraper (In-App)
+                        {selectedScraper === 'migrate_images' ? 'Start Migration' : 'Run Scraper (In-App)'}
                       </Button>
                     ) : (
                       <Button 
                         variant="secondary"
                         onClick={() => {
                           const scriptName = selectedScraper === 'amazon' ? 'scraper_amazon.py' : 'scraper_additional_images.py';
-                          // Create a download link for the public script file
                           const link = document.createElement("a");
-                          link.href = `/${scriptName}`; // Assuming scripts are in public folder, or we need to fetch them
+                          link.href = `/${scriptName}`; 
                           link.setAttribute("download", scriptName);
-                          // For now, since scripts are not in public, we might need a workaround or API to serve them
-                          // But simpler: just open the repo link or assume they are moved to public
-                          // Let's create an API route to serve the file content if needed, or better:
-                          // Just alert "Please verify script is in project folder" for now as per "downloadable files only" request
-                          // Actually, best user experience is to enable download. 
-                          // I'll implement a simple download handler here assuming we can fetch the file content via server action or API.
-                          // For this step, I'll direct them to the export instructions which include the script setup.
+                          // link.click(); // If we want to auto-download
+                          // For now, redirect to export instructions
                            setShowExportInstructions(true);
                         }}
                         className="w-full sm:w-auto"
@@ -509,23 +623,23 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                         {scraperStatus === 'success' && <CheckCircle2 className="h-5 w-5 text-green-600" />}
                         {scraperStatus === 'error' && <XCircle className="h-5 w-5 text-red-600" />}
                         <h4 className="font-medium">
-                          {scraperStatus === 'running' && 'Scraper Running...'}
-                          {scraperStatus === 'success' && 'Scraping Completed!'}
-                          {scraperStatus === 'error' && 'Scraping Failed'}
+                          {scraperStatus === 'running' && 'Processing...'}
+                          {scraperStatus === 'success' && 'Operation Completed!'}
+                          {scraperStatus === 'error' && 'Operation Failed'}
                         </h4>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {scraperStatus === 'running' && 'Please wait while the scraper processes your products...'}
-                        {scraperStatus === 'success' && 'Products have been enriched and updated automatically.'}
-                        {scraperStatus === 'error' && 'An error occurred during scraping. Check the output below.'}
+                        {scraperStatus === 'running' && 'Please wait while we process your request...'}
+                        {scraperStatus === 'success' && 'Data has been updated successfully.'}
+                        {scraperStatus === 'error' && 'An error occurred. Check the logs below.'}
                       </p>
                     </div>
 
                     <div>
-                      <Label className="mb-2 block">Scraper Output:</Label>
+                      <Label className="mb-2 block">Logs:</Label>
                       <ScrollArea className="h-[300px] w-full border rounded-md p-4 bg-muted/50">
                         <pre className="text-xs font-mono whitespace-pre-wrap">
-                          {scraperOutput.join('')}
+                          {scraperOutput.join('\n')}
                         </pre>
                       </ScrollArea>
                     </div>
@@ -539,8 +653,11 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                       </Button>
                     ) : (
                       <Button onClick={() => {
+                        // If success, keep the data change but close dialog
+                         if (scraperStatus === 'success') {
+                            setOpen(false);
+                         }
                         resetDialog();
-                        setOpen(false);
                       }} className="w-full sm:w-auto">
                         {scraperStatus === 'success' ? 'Done' : 'Close'}
                       </Button>
@@ -554,31 +671,24 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                   <div className="space-y-4 py-4">
                     <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 p-4 rounded-md">
                       <h4 className="font-medium text-green-900 dark:text-green-100 mb-2">
-                        ✓ CSV Exported Successfully
+                        ✓ Instructions
                       </h4>
                       <p className="text-sm text-green-800 dark:text-green-200">
-                        {filteredProducts.length} products exported to <code className="bg-green-100 dark:bg-green-900 px-1 rounded">products_to_scrape_*.csv</code>
+                        To run the Python scraper manually:
                       </p>
                     </div>
 
                     <div className="space-y-4">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <FileCode2 className="h-4 w-4" />
-                        Manual Scraper Instructions:
-                      </h4>
                       
                       <div className="space-y-3 text-sm">
                         <ol className="list-decimal list-inside space-y-2">
-                          <li>Locate the exported CSV in your Downloads folder</li>
-                          <li>Copy it to your <code className="bg-muted px-1 rounded">saidalia_scraper</code> folder</li>
-                          <li>Run the scraper manually:
-                            <pre className="bg-muted p-2 rounded mt-1 text-xs overflow-x-auto">
-  python scraper_amazon.py
-  # or
-  python scraper_additional_images.py
-                            </pre>
+                          <li>Export the CSV data first using "Export CSV Data"</li>
+                          <li>Download the script: 
+                            <a href={`/${selectedScraper === 'amazon' ? 'scraper_amazon.py' : 'scraper_additional_images.py'}`} download className="ml-1 text-blue-600 underline">
+                                Click here to download script
+                            </a>
                           </li>
-                          <li>Import the enriched CSV back using the <strong>Import CSV</strong> button</li>
+                          <li>Run locally: <code className="bg-muted px-1 rounded">python {selectedScraper === 'amazon' ? 'scraper_amazon.py' : 'scraper_additional_images.py'} [filename]</code></li>
                         </ol>
                       </div>
                     </div>
@@ -602,44 +712,21 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Scraper Instructions</DialogTitle>
+            <DialogTitle>Instructions</DialogTitle>
             <DialogDescription>
-              How to use the local scraper feature safely.
+              How to use the data tools.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <h4 className="font-medium">Prerequisites</h4>
-              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                <li>Python 3.x installed</li>
-                <li>Dependencies: playwright, pandas</li>
-                <li>Playwright browsers installed (<code>playwright install</code>)</li>
-              </ul>
-            </div>
-            
-            <Separator />
-            
-            <div className="space-y-2">
-              <h4 className="font-medium">Running from App</h4>
-              <p className="text-sm text-muted-foreground">
-                If you have the environment set up, you can run scrapers directly from this dialog. The app will execute the Python scripts in the background and stream the output.
-              </p>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <h4 className="font-medium">Manual Execution (Recommended for large datasets)</h4>
-              <p className="text-sm text-muted-foreground">
-                For better control or debugging, you can export the data and run the scripts manually:
-              </p>
-              <ol className="list-decimal list-inside text-sm text-muted-foreground space-y-1 mt-2">
-                <li>Click "Export CSV Only" to get the products file</li>
-                <li>Move the file to the project root folder</li>
-                <li>Run: <code>python scraper_amazon.py [input_file] [output_file]</code></li>
-                <li>Import the result back using "Import CSV"</li>
-              </ol>
-            </div>
+             <h4 className="font-medium">Web Scraper</h4>
+             <p className="text-sm text-muted-foreground">
+                 The In-App scraper runs directly in your browser/server (Node.js) to fetch data from Amazon.sa. It is the recommended way to enrich your product data.
+             </p>
+             <Separator />
+             <h4 className="font-medium">Image Migration (Lightsail)</h4>
+             <p className="text-sm text-muted-foreground">
+                 This tool downloads images from their current external URLs and uploads them to your configured AWS Lightsail Object Storage bucket. It updates your product data with the new S3 URLs.
+             </p>
           </div>
           <DialogFooter>
             <Button onClick={() => setShowHelp(false)}>Close</Button>
