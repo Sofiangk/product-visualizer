@@ -143,7 +143,7 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
         <CardHeader className="p-4 pb-2">
-          <div className="flex justify-between items-start gap-2">
+          <div className="flex justify-between items-start gap-1">
             <h3 className="font-semibold leading-none tracking-tight line-clamp-2" title={product.Product}>
               {product.Product}
             </h3>

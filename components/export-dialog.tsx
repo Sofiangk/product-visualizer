@@ -22,7 +22,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Papa from "papaparse";
-import { Download } from "lucide-react";
+import { Upload } from "lucide-react";
 
 interface ExportDialogProps {
   products: Product[];
@@ -369,7 +369,21 @@ export function ExportDialog({ products, selectedRows }: ExportDialogProps) {
         const filteredProduct: any = {};
         selectedColumns.forEach((col) => {
           if (col !== "Website") {
-            filteredProduct[col] = (product as any)[col];
+            let value = (product as any)[col];
+            
+            // SKU Fallback: If Barcode is missing, use CAT-SUB-ID format (e.g., MABBAT004)
+            if (col === "Barcode" && (!value || value.trim() === "")) {
+              const mainCat = (product["Main Category (EN)"] || "GEN").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+              const subCat = (product["Sub-Category (EN)"] || "GEN").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+              const id = (product.ID || "0").toString().padStart(3, "0");
+              value = `${mainCat}${subCat}${id}`;
+            }
+
+            // Prepend tab to Barcode to force Excel to treat it as text
+            if (col === "Barcode" && value) {
+              value = `\t${value}`;
+            }
+            filteredProduct[col] = value;
           }
         });
         return filteredProduct;
@@ -394,10 +408,19 @@ export function ExportDialog({ products, selectedRows }: ExportDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (isOpen) {
+        if (selectedRows && selectedRows.length > 0) {
+          setExportScope("selected");
+        } else {
+          setExportScope("all");
+        }
+      }
+    }}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Download className="mr-2 h-4 w-4" />
+        <Button variant="outline" size="sm" className="h-8">
+          <Upload className="mr-2 h-4 w-4" />
           Export CSV
         </Button>
       </DialogTrigger>
