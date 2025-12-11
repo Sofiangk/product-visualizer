@@ -1,5 +1,25 @@
-import { chromium } from 'playwright';
 import type { Product } from './schema';
+
+// Dynamic imports for environment-specific browser
+async function getBrowser() {
+  const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
+  
+  if (isProduction) {
+    // Use serverless-compatible chromium for Vercel
+    const chromium = await import('@sparticuz/chromium');
+    const { chromium: playwrightChromium } = await import('playwright-core');
+    
+    return await playwrightChromium.launch({
+      args: chromium.default.args,
+      executablePath: await chromium.default.executablePath(),
+      headless: true,
+    });
+  } else {
+    // Use standard playwright for local development
+    const { chromium } = await import('playwright');
+    return await chromium.launch({ headless: true });
+  }
+}
 
 // Brand patterns for detection
 const BRAND_PATTERNS = [
@@ -284,7 +304,7 @@ async function getArabicTitle(page: any, asin: string, domain: string): Promise<
 }
 
 export async function scrapeAdditionalImages(product: Product): Promise<Product> {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await getBrowser();
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
   });

@@ -36,8 +36,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error in additional images scraper:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error('Error stack:', errorStack);
+    
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error occurred' },
+      { 
+        error: errorMessage,
+        details: errorStack,
+        hint: 'Make sure Playwright browsers are installed: npx playwright install chromium'
+      },
       { status: 500 }
     );
   }
