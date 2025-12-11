@@ -22,20 +22,25 @@ function slugify(text: string): string {
 }
 
 async function fetchImage(url: string, retries = 2): Promise<{ buffer: Buffer; contentType: string } | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
   try {
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+      },
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
         if (retries > 0 && response.status !== 404) {
-            console.log(`Retry fetch for ${url}, ${retries} remaining`);
+            // console.log(`Retry fetch for ${url}, ${retries} remaining`);
             await new Promise(res => setTimeout(res, 1000));
             return fetchImage(url, retries - 1);
         }
-        console.error(`Failed to fetch ${url}: ${response.statusText}`);
+        // console.error(`Failed to fetch ${url}: ${response.statusText}`);
       return null;
     }
 
@@ -44,7 +49,8 @@ async function fetchImage(url: string, retries = 2): Promise<{ buffer: Buffer; c
     const contentType = response.headers.get('content-type') || 'image/jpeg';
     return { buffer, contentType };
   } catch (error) {
-    console.error(`Error fetching ${url}:`, error);
+    clearTimeout(timeoutId);
+    // console.error(`Error fetching ${url}:`, error);
     if (retries > 0) {
         await new Promise(res => setTimeout(res, 1000));
         return fetchImage(url, retries - 1);

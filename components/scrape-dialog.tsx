@@ -353,8 +353,8 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" className="h-8">
             <Sparkles className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Scrape Data</span>
-            <span className="sm:hidden">Scrape</span>
+            <span className="hidden sm:inline">Data Tools</span>
+            <span className="sm:hidden">Tools</span>
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-3xl max-h-[90vh]">
@@ -514,7 +514,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                           </div>
                         </div>
 
-                         {/* Image Migration (Lightsail) */}
+                        {/* Image Migration (Lightsail) */}
                         <div className="flex items-start space-x-2 border rounded-lg p-3 bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
                           <RadioGroupItem value="migrate_images" id="migrate_images" className="mt-1" />
                           <div className="flex-1">
@@ -523,32 +523,6 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                             </Label>
                             <p className="text-xs text-muted-foreground mt-1">
                               Downloads images and uploads them to your configured AWS Lightsail bucket.
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Python Scraper (Download) */}
-                        <div className="flex items-start space-x-2 border rounded-lg p-3">
-                          <RadioGroupItem value="amazon" id="amazon" className="mt-1" />
-                          <div className="flex-1">
-                            <Label htmlFor="amazon" className="font-medium cursor-pointer">
-                              Amazon Scraper (Python)
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Download Python script to run locally.
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Additional Images (Download) */}
-                        <div className="flex items-start space-x-2 border rounded-lg p-3">
-                          <RadioGroupItem value="additional_images" id="additional_images" className="mt-1" />
-                          <div className="flex-1">
-                            <Label htmlFor="additional_images" className="font-medium cursor-pointer">
-                              Additional Images Scraper (Python)
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Download Python script to run locally.
                             </p>
                           </div>
                         </div>
@@ -722,11 +696,37 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
              <p className="text-sm text-muted-foreground">
                  The In-App scraper runs directly in your browser/server (Node.js) to fetch data from Amazon.sa. It is the recommended way to enrich your product data.
              </p>
+
              <Separator />
              <h4 className="font-medium">Image Migration (Lightsail)</h4>
              <p className="text-sm text-muted-foreground">
                  This tool downloads images from their current external URLs and uploads them to your configured AWS Lightsail Object Storage bucket. It updates your product data with the new S3 URLs.
              </p>
+             <Separator />
+             <h4 className="font-medium">Legacy Python Tools</h4>
+             <p className="text-sm text-muted-foreground mb-3">
+                 The original Python scrapers are available for manual use if needed.
+             </p>
+             <div className="flex flex-col gap-2">
+                <Button variant="outline" className="justify-start h-auto py-2 px-3" asChild>
+                    <a href="/scraper_amazon.py" download="scraper_amazon.py">
+                        <Download className="mr-2 h-4 w-4" />
+                        <div className="text-left">
+                            <div className="font-medium">Download Amazon Scraper</div>
+                            <div className="text-xs text-muted-foreground">Python script for Amazon.sa</div>
+                        </div>
+                    </a>
+                </Button>
+                <Button variant="outline" className="justify-start h-auto py-2 px-3" asChild>
+                    <a href="/scraper_additional_images.py" download="scraper_additional_images.py">
+                        <Download className="mr-2 h-4 w-4" />
+                        <div className="text-left">
+                            <div className="font-medium">Download Additional Images Scraper</div>
+                            <div className="text-xs text-muted-foreground">Python script for fetching extra images</div>
+                        </div>
+                    </a>
+                </Button>
+             </div>
           </div>
           <DialogFooter>
             <Button onClick={() => setShowHelp(false)}>Close</Button>
