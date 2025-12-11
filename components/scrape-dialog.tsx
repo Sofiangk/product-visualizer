@@ -452,7 +452,7 @@ export function ScrapeDialog({ products, onDataChange }: ScrapeDialogProps) {
                 Running scrapers or migrating images.
               </DialogDescription>
             </div>
-            {!showDevWarning && (
+            {isAuthenticated && (
               <Button
                 variant="ghost"
                 size="icon"

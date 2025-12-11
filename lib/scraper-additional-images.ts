@@ -2,22 +2,42 @@ import type { Product } from './schema';
 
 // Dynamic imports for environment-specific browser
 async function getBrowser() {
-  const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
-  
-  if (isProduction) {
-    // Use serverless-compatible chromium for Vercel
-    const chromium = await import('@sparticuz/chromium');
-    const { chromium: playwrightChromium } = await import('playwright-core');
+  try {
+    const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
+    console.log(`  Environment: ${isProduction ? 'Production/Vercel' : 'Local Development'}`);
     
-    return await playwrightChromium.launch({
-      args: chromium.default.args,
-      executablePath: await chromium.default.executablePath(),
-      headless: true,
-    });
-  } else {
-    // Use standard playwright for local development
-    const { chromium } = await import('playwright');
-    return await chromium.launch({ headless: true });
+    if (isProduction) {
+      console.log('  Loading serverless chromium...');
+      // Use serverless-compatible chromium for Vercel
+      const chromium = await import('@sparticuz/chromium');
+      const { chromium: playwrightChromium } = await import('playwright-core');
+      
+      console.log('  Launching serverless browser...');
+      
+      // Configure chromium for serverless
+      const executablePath = await chromium.default.executablePath();
+      
+      return await playwrightChromium.launch({
+        args: [
+          ...chromium.default.args,
+          '--disable-gpu',
+          '--disable-dev-shm-usage',
+          '--disable-setuid-sandbox',
+          '--no-sandbox',
+        ],
+        executablePath,
+        headless: true,
+      });
+    } else {
+      console.log('  Loading local playwright...');
+      // Use standard playwright for local development
+      const { chromium } = await import('playwright');
+      console.log('  Launching local browser...');
+      return await chromium.launch({ headless: true });
+    }
+  } catch (error) {
+    console.error('  ✗ Error in getBrowser:', error);
+    throw error;
   }
 }
 

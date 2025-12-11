@@ -2,6 +2,15 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "regions": ["dub1"]
+  "regions": ["dub1"],
+  "functions": {
+    "app/api/scrape-additional-images/route.ts": {
+      "memory": 1024,
+      "maxDuration": 10
+    },
+    "app/api/scrape-js/route.ts": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
 }
-
